@@ -3,9 +3,11 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
 <title>ملاحظ الباص – FMS Lite (Mobile)</title>
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 :root{--bg:#0b1020;--card:#101826;--ink:#e7edf6;--muted:#9fb0c8;--line:#233046;--ok:#22c55e;--ok2:#38bdf8;--danger:#ef4444}
 *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font-family:"Tajawal",system-ui}
@@ -59,7 +61,7 @@ button.neutral{background:#0c1424;border:1px solid var(--line);font-weight:700}
 </div>
 
 <div class="footer">
-  <button id="startBtn" class="primary" onclick="ensurePermissionAndStart()" disabled>تفعيل التتبع</button>
+  <button id="startBtn" class="primary" onclick="ensurePermissionAndStart()" disabled>تفعيل التتبّع</button>
   <button id="stopBtn" class="danger" onclick="stopTracking()" disabled>إيقاف</button>
   <button id="doneBtn" class="neutral" onclick="finalizePeriod()" disabled>تم</button>
 </div>
@@ -71,9 +73,11 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /* ===== State ===== */
-let map, myMarker=null, pathLine=null, pathPts=[], watchId=null;
-let myBus=null, currentPeriod='', loadedStudents=[], frozen={morning:new Set(), evening:new Set()};
-let observerName='—'; // اسم الملاحظ المعروض في رسالة "تم"
+let map, myMarker=null, pathLine=null, pathPts=[];
+let watchId=null, lastPos=null, pushTimer=null;
+let myBus=null, currentPeriod='', loadedStudents=[];
+let frozen={morning:new Set(), evening:new Set()}; // يُجمّد فقط بعد الضغط
+let observerName='—';
 const $ = sel => document.querySelector(sel);
 
 /* ===== Helpers ===== */
@@ -104,18 +108,15 @@ async function loadBusList(){
   if(bid){
     $('#bus_pick').value = String(bid);
     myBus = { id: bid };
-    await fetchObserverName(); // احصل على اسم الملاحظ
+    await fetchObserverName();
   }
-  if(per){
-    $('#period_pick').value = per;
-    currentPeriod = per;
-  }
+  if(per){ $('#period_pick').value = per; currentPeriod = per; }
   updateFooterButtonsState();
   if(myBus?.id && currentPeriod){ await loadStudents(); renderStudents(); }
   else if(myBus?.id){ $('#students').textContent = 'اختر الفترة…'; }
 }
 
-/* ===== Fetch observer name for selected bus ===== */
+/* ===== Observer name for message ===== */
 async function fetchObserverName(){
   observerName = '—';
   if(!myBus?.id) return;
@@ -126,7 +127,7 @@ async function fetchObserverName(){
   }
 }
 
-/* ===== Bus / Period change ===== */
+/* ===== Changes ===== */
 async function pickBus(){
   const val = $('#bus_pick').value;
   myBus = val ? { id: Number(val) } : null;
@@ -143,14 +144,14 @@ async function onPeriodChange(){
   saveSelection();
   updateFooterButtonsState();
 
-  // لا تجمد من القاعدة — فقط من الجلسة الحالية حسب طلبك
+  // لا تجميد من القاعدة — فقط بعد الضغط
   frozen.morning.clear(); frozen.evening.clear();
 
   if(!myBus?.id || !currentPeriod){ $('#students').textContent = 'اختر الباص ثم الفترة…'; return; }
   await loadStudents(); renderStudents();
 }
 
-/* ===== Load students ===== */
+/* ===== Students ===== */
 async function loadStudents(){
   const { data: rows, error } = await client
     .from('student_bus')
@@ -159,8 +160,6 @@ async function loadStudents(){
   if(error){ alert(error.message); return; }
   loadedStudents = (rows||[]).map(r=>r.students).filter(Boolean);
 }
-
-/* ===== Render students (no pre-freeze) ===== */
 function renderStudents(){
   const wrap = $('#students');
   if(!myBus?.id || !currentPeriod){ wrap.textContent='اختر الباص ثم الفترة…'; return; }
@@ -181,7 +180,7 @@ function renderStudents(){
   }).join('') || '<div class="small">لا يوجد طلاب لهذا الباص.</div>';
 }
 
-/* ===== Confirm & Insert (freeze after click only) ===== */
+/* ===== Attendance (freeze only after click) ===== */
 async function confirmAndMark(student_id, action){
   if(!myBus?.id) return alert('اختر الباص أولاً');
   if(!currentPeriod) return alert('اختر الفترة');
@@ -195,19 +194,83 @@ async function confirmAndMark(student_id, action){
   });
   if(error){ alert(error.message); return; }
 
-  // تجميد محلي بعد الضغط فقط
   frozen[currentPeriod].add(student_id);
   const row = document.getElementById(`stu_${student_id}`); if(row) row.classList.add('locked');
 }
 
-/* ===== زر تم ===== */
-function finalizePeriod(){
-  if(!myBus?.id || !currentPeriod){ alert('اختر الباص والفترة أولاً'); return; }
-  const msg = `انتهت الفترة ${arabicPeriod(currentPeriod)} — شكراً لك ${observerName} 🌟`;
-  alert(msg);
+/* ===== GPS controls ===== */
+async function ensurePermissionAndStart(){
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+    alert('لتفعيل الـGPS يجب فتح الصفحة عبر HTTPS أو على localhost.');
+    return;
+  }
+  if(!('geolocation' in navigator)){ alert('المتصفح لا يدعم GPS'); return; }
+  try{
+    if('permissions' in navigator && navigator.permissions?.query){
+      const st = await navigator.permissions.query({name:'geolocation'});
+      if(st.state==='denied'){ alert('يرجى منح إذن الموقع من إعدادات المتصفح'); return; }
+    }
+  }catch(_){}
+  startTracking();
+}
+function startTracking(){
+  if(!myBus?.id){ alert('اختر الباص أولاً'); return; }
+  if(watchId!==null) return;
+
+  watchId = navigator.geolocation.watchPosition(onPos, onErr, {
+    enableHighAccuracy: true,
+    maximumAge: 0,
+    timeout: 15000
+  });
+  pushTimer = setInterval(async ()=>{
+    if(lastPos && myBus?.id){
+      await sendFix(lastPos.coords.latitude, lastPos.coords.longitude);
+    }
+  }, 10000);
+
+  $('#startBtn').disabled = true;
+  $('#stopBtn').disabled  = false;
+}
+function stopTracking(){
+  if(watchId!==null) navigator.geolocation.clearWatch(watchId);
+  watchId = null;
+  if(pushTimer){ clearInterval(pushTimer); pushTimer=null; }
+  $('#startBtn').disabled = false;
+  $('#stopBtn').disabled  = true;
+}
+async function onPos(pos){
+  lastPos = pos;
+  const lat = pos.coords.latitude;
+  const lng = pos.coords.longitude;
+
+  if(!myMarker){ myMarker = L.marker([lat,lng]).addTo(map).bindTooltip('موقع الباص'); }
+  else myMarker.setLatLng([lat,lng]);
+
+  pathPts.push([lat,lng]);
+  if(pathLine){ pathLine.setLatLngs(pathPts); }
+  else pathLine = L.polyline(pathPts,{weight:4,opacity:.9}).addTo(map);
+
+  await sendFix(lat, lng);
+}
+function onErr(err){
+  console.log('GPS error', err);
+  if(err.code === 1) alert('تم رفض إذن الموقع. فعّل الإذن من إعدادات المتصفح.');
+  else if(err.code === 2) alert('تعذر الحصول على الإحداثيات. تحقّق من GPS.');
+  else if(err.code === 3) alert('انتهى وقت طلب الموقع. حاول مرة أخرى.');
+}
+async function sendFix(lat, lng){
+  const { error } = await client.from('gps_tracks').insert({ bus_id: myBus.id, lat, lng });
+  if(error){ console.error('Supabase insert error:', error); }
 }
 
-/* ===== أزرار التذييل ===== */
+/* ===== Done button ===== */
+function finalizePeriod(){
+  if(!myBus?.id || !currentPeriod){ alert('اختر الباص والفترة أولاً'); return; }
+  stopTracking(); // إيقاف مؤقت
+  alert(`انتهت الفترة ${arabicPeriod(currentPeriod)} — شكرًا لك ${observerName} 🌟`);
+}
+
+/* ===== Footer state ===== */
 function updateFooterButtonsState(){
   const hasBus = !!myBus?.id;
   $('#startBtn').disabled = !hasBus;
@@ -215,47 +278,10 @@ function updateFooterButtonsState(){
   $('#doneBtn').disabled  = !(hasBus && !!currentPeriod);
 }
 
-/* ===== GPS Tracking & permission ===== */
-async function ensurePermissionAndStart(){
-  try{
-    if(!('geolocation' in navigator)) { alert('المتصفح لا يدعم GPS'); return; }
-    if('permissions' in navigator && navigator.permissions?.query){
-      const st = await navigator.permissions.query({name:'geolocation'});
-      if(st.state==='denied'){ alert('يرجى منح إذن الموقع من إعدادات المتصفح'); return; }
-    }
-    startTracking();
-  }catch(e){ startTracking(); }
-}
-function onPos(pos){
-  const { latitude: lat, longitude: lng } = pos.coords;
-  if(!myMarker){ myMarker = L.marker([lat,lng]).addTo(map).bindTooltip('موقع الباص'); }
-  else myMarker.setLatLng([lat,lng]);
-  pathPts.push([lat,lng]);
-  if(pathLine){ pathLine.setLatLngs(pathPts); }
-  else pathLine = L.polyline(pathPts,{weight:4,opacity:.9}).addTo(map);
-  if(myBus?.id) client.from('gps_tracks').insert({ bus_id: myBus.id, lat, lng });
-}
-function onErr(err){ console.log('GPS error', err); }
-function startTracking(){
-  if(!myBus?.id) return alert('اختر الباص أولاً');
-  if(watchId!==null) return;
-  watchId = navigator.geolocation.watchPosition(onPos,onErr,{ enableHighAccuracy:true, maximumAge:1000, timeout:10000 });
-  $('#startBtn').disabled = true; $('#stopBtn').disabled = false;
-}
-function stopTracking(){
-  if(watchId!==null) navigator.geolocation.clearWatch(watchId);
-  watchId=null; $('#startBtn').disabled = false; $('#stopBtn').disabled = true;
-}
-function resetMapPath(){
-  if(pathLine){ map.removeLayer(pathLine); pathLine=null; }
-  if(myMarker){ map.removeLayer(myMarker); myMarker=null; }
-  pathPts=[];
-}
-
 /* ===== Boot ===== */
 (async ()=>{
   initMap();
-  await loadBusList(); // يستعيد آخر باص/فترة ويجلب اسم الملاحظ
+  await loadBusList();
   updateFooterButtonsState();
 })();
 </script>
