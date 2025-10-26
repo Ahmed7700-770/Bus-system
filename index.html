@@ -94,15 +94,19 @@ thead th{background:#0c1424}
     <div id="notif" class="list"></div>
   </div>
 
-  <!-- خريطة + فلتر -->
+  <!-- خريطة + أدوات -->
   <div class="card">
     <div class="row" style="justify-content:space-between;align-items:center">
-      <h3>الخريطة الحيّة <span class="badge">تحديث كل 10 ثوان</span></h3>
+      <h3>الخريطة الحيّة <span class="badge">Realtime + كل 10 ثوان</span></h3>
       <div class="row">
         <label style="min-width:220px">فلتر الخريطة:
           <select id="map_bus">
             <option value="">عرض جميع الباصات</option>
           </select>
+        </label>
+        <label class="row" style="align-items:center;gap:6px">
+          <input type="checkbox" id="toggle_students" onchange="drawLive()" />
+          <span>إظهار نقاط الطلاب</span>
         </label>
         <button onclick="refreshMap()">عرض</button>
         <button class="ghost" onclick="drawLive()">تحديث الخريطة</button>
@@ -268,16 +272,23 @@ async function clearNotificationsDB(){
   alert('تم حذف جميع الإشعارات من قاعدة البيانات نهائيًا.');
 }
 
-/* ===== خريطة ===== */
+/* ===== خريطة + تتبّع لحظي ===== */
 let map, busMarkers=new Map(), polylines=new Map(), selectedBusId=null;
+let studentLayer = L.layerGroup();  // طبقة نقاط الطلاب
+let liveChannel = null;             // قناة Realtime
+
 function initMap(){
   map = L.map('map').setView([25.285,51.531], 11);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(map);
+  studentLayer.addTo(map);
 }
+
 function refreshMap(){
   const val = q('#map_bus').value;
   selectedBusId = val ? Number(val) : null;
   drawLive();
+  // إعادة الاشتراك بالفلتر الجديد
+  subscribeRealtime();
 }
 
 /* رسم مسارات آخر 12 ساعة، وإلا آخر نقطة لكل باص */
@@ -315,29 +326,100 @@ async function drawLive(){
         const bounds = L.latLngBounds(arr);
         map.fitBounds(bounds,{padding:[30,30]});
       }
-      return;
+    }else{
+      // fallback: آخر نقطة لكل باص
+      let lastQ = client.from('gps_tracks')
+        .select('bus_id, lat, lng, recorded_at')
+        .order('recorded_at',{ascending:false});
+      if(selectedBusId) lastQ = lastQ.eq('bus_id', selectedBusId);
+      const { data: allTracks } = await lastQ;
+      if(allTracks?.length){
+        const seen = new Set(), latestPerBus = [];
+        for(const t of allTracks){
+          if(selectedBusId && t.bus_id !== selectedBusId) continue;
+          if(!seen.has(t.bus_id)){ latestPerBus.push(t); seen.add(t.bus_id); }
+        }
+        latestPerBus.forEach(t=>{
+          const label = busMeta.get(t.bus_id)?.no ? `Bus ${busMeta.get(t.bus_id).no}` : `Bus #${t.bus_id}`;
+          const mk = L.marker([t.lat,t.lng]).addTo(map).bindTooltip(label+' (آخر موقع)').openTooltip();
+          busMarkers.set(t.bus_id, mk);
+        });
+        if(selectedBusId && latestPerBus.length){ map.setView([latestPerBus[0].lat, latestPerBus[0].lng], 13); }
+      }
     }
 
-    // fallback: آخر نقطة لكل باص
-    let lastQ = client.from('gps_tracks')
-      .select('bus_id, lat, lng, recorded_at')
-      .order('recorded_at',{ascending:false});
-    if(selectedBusId) lastQ = lastQ.eq('bus_id', selectedBusId);
-    const { data: allTracks } = await lastQ;
-    if(!allTracks?.length) return;
-
-    const seen = new Set(), latestPerBus = [];
-    for(const t of allTracks){
-      if(selectedBusId && t.bus_id !== selectedBusId) continue;
-      if(!seen.has(t.bus_id)){ latestPerBus.push(t); seen.add(t.bus_id); }
-    }
-    latestPerBus.forEach(t=>{
-      const label = busMeta.get(t.bus_id)?.no ? `Bus ${busMeta.get(t.bus_id).no}` : `Bus #${t.bus_id}`;
-      const mk = L.marker([t.lat,t.lng]).addTo(map).bindTooltip(label+' (آخر موقع)').openTooltip();
-      busMarkers.set(t.bus_id, mk);
-    });
-    if(selectedBusId && latestPerBus.length){ map.setView([latestPerBus[0].lat, latestPerBus[0].lng], 13); }
+    // نقاط الطلاب (اختياري)
+    await drawStudentPoints();
   }catch(e){ console.log(e); }
+}
+
+/* طبقة نقاط الطلاب */
+async function drawStudentPoints(){
+  studentLayer.clearLayers();
+  const show = document.getElementById('toggle_students')?.checked;
+  if(!show) return;
+  let query = client
+    .from('student_bus')
+    .select('bus_id, students(full_name, home_lat, home_lng)');
+  if(selectedBusId) query = query.eq('bus_id', selectedBusId);
+
+  const { data, error } = await query;
+  if(error){ console.log(error); return; }
+
+  (data||[])
+    .map(r => ({ bus_id: r.bus_id, ...r.students }))
+    .filter(s => s && typeof s.home_lat === 'number' && typeof s.home_lng === 'number')
+    .forEach(s=>{
+      const m = L.circleMarker([s.home_lat, s.home_lng], { radius:6, opacity:0.9 })
+        .bindTooltip(`👤 ${s.full_name}`, {direction:'top'})
+        .on('click', ()=> window.open(`https://www.google.com/maps/?q=${s.home_lat},${s.home_lng}`, '_blank'));
+      studentLayer.addLayer(m);
+    });
+}
+
+/* ===== Realtime: تحريك المؤشر لحظيًا ===== */
+function subscribeRealtime(){
+  // أغلق قناة سابقة إن وجدت
+  if(liveChannel){ client.removeChannel(liveChannel); liveChannel=null; }
+
+  // فلتر اختياري على bus_id
+  const filter = selectedBusId ? `bus_id=eq.${selectedBusId}` : '*';
+
+  liveChannel = client.channel('gps_stream')
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'gps_tracks',
+      filter // يعمل فقط إذا كان replication مفعّل لهذا الجدول
+    }, (payload) => {
+      const row = payload.new;
+      const bid = row.bus_id;
+      // لو نعرض باصًا محددًا وتلقينا غيره، تجاهل
+      if(selectedBusId && bid !== selectedBusId) return;
+
+      // حدّث أو أنشئ بوليلاين ومؤشر
+      const ll = [row.lat, row.lng];
+
+      // polyline
+      let pl = polylines.get(bid);
+      if(pl){ pl.addLatLng(ll); }
+      else{
+        pl = L.polyline([ll],{weight:4,opacity:.9}).addTo(map);
+        polylines.set(bid, pl);
+      }
+
+      // marker
+      const label = busMeta.get(bid)?.no ? `Bus ${busMeta.get(bid).no}` : `Bus #${bid}`;
+      let mk = busMarkers.get(bid);
+      if(mk){ mk.setLatLng(ll); }
+      else{
+        mk = L.marker(ll).addTo(map).bindTooltip(label).openTooltip();
+        busMarkers.set(bid, mk);
+      }
+    })
+    .subscribe(status => {
+      // console.log('Realtime status:', status);
+    });
 }
 
 /* ===== تقرير ===== */
@@ -404,10 +486,10 @@ function downloadCSV(){
 (async ()=>{
   await loadOptions();
   initMap();
-  await drawLive();
+  await drawLive();        // تحميل أولي
   await loadNotifications();
-  // تحديث الخريطة كل 10 ثوان + زر "تحديث الخريطة" يدوي
-  setInterval(drawLive, 10000);
+  subscribeRealtime();     // اشتراك لحظي
+  setInterval(drawLive, 10000); // تزامن احتياطي كل 10 ثوان
   q('#r_date').value = new Date().toISOString().slice(0,10);
 })();
 </script>
