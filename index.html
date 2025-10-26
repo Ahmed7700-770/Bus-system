@@ -10,8 +10,7 @@
 
 <style>
 :root{--bg:#0f172a;--card:#101826;--ink:#e7edf6;--muted:#97a6ba;--line:#223046;--ok:#22c55e;--ok2:#38bdf8;--danger:#ef4444}
-*{box-sizing:border-box}
-body{margin:0;background:linear-gradient(120deg,#0b1020,#0f172a);color:var(--ink);font-family:"Tajawal",system-ui}
+*{box-sizing:border-box} body{margin:0;background:linear-gradient(120deg,#0b1020,#0f172a);color:var(--ink);font-family:"Tajawal",system-ui}
 header{padding:14px 18px;background:#0c1222;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center}
 a{color:#aee3ff;text-decoration:none}
 .container{padding:16px;display:grid;grid-template-columns:360px 1fr;gap:16px}
@@ -21,11 +20,21 @@ input,select,button{width:100%;padding:10px;border-radius:12px;border:1px solid 
 button{cursor:pointer;background:linear-gradient(135deg,var(--ok),var(--ok2));border:none;font-weight:700}
 button.ghost{background:#0c1424;border:1px solid #243043}
 button.danger{background:var(--danger)}
+#map{height:520px;border-radius:18px;border:1px solid #223046}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .list{max-height:220px;overflow:auto}
 .notif{padding:8px;border-bottom:1px dashed #2a3a51}
 .pill{display:inline-block;padding:2px 8px;border:1px solid #2a3a51;border-radius:999px;font-size:12px}
-#map{height:520px;border-radius:18px;border:1px solid #223046}
+.hint{font-size:12px;opacity:.75}
+hr{border:none;border-top:1px solid #223046;margin:14px 0}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px;border-bottom:1px solid #223046;text-align:right}
+thead th{background:#0c1424}
+.stats{display:flex;gap:10px;flex-wrap:wrap}
+.stat{background:#0c1424;border:1px solid #243043;border-radius:12px;padding:8px 12px}
+.stat b{font-size:18px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .badge{padding:2px 8px;border:1px solid #2a3a51;border-radius:999px;font-size:12px}
 .small{font-size:12px;opacity:.8}
 .timeline{display:grid;gap:8px}
@@ -71,7 +80,7 @@ button.danger{background:var(--danger)}
       <input id="stu_section" placeholder="الشعبة"/>
     </div>
     <input id="home_point" placeholder="إحداثي واحد: 25.285,51.531 أو رابط خرائط Google"/>
-    <div class="small">نقبل lat,lng أو رابط فيه @lat,lng أو ?q=lat,lng</div>
+    <div class="hint">نقبل lat,lng أو رابط فيه @lat,lng أو ?q=lat,lng</div>
     <button onclick="createStudent()">إضافة طالب</button>
 
     <h4>5) تخصيص الطالب للباص</h4>
@@ -90,23 +99,26 @@ button.danger{background:var(--danger)}
     <div id="notif" class="list"></div>
   </div>
 
-  <!-- خريطة + أدوات + سجل فوق الخريطة -->
+  <!-- خريطة + أدوات + سجل المسار فوق الخريطة -->
   <div class="card">
-    <div class="row" style="justify-content:space-between;">
+    <div class="row" style="justify-content:space-between;align-items:center">
       <h3>الخريطة الحيّة <span class="badge">Realtime + كل 10 ثوان</span></h3>
       <div class="row">
         <label style="min-width:220px">فلتر الخريطة:
-          <select id="map_bus"><option value="">عرض جميع الباصات</option></select>
+          <select id="map_bus">
+            <option value="">عرض جميع الباصات</option>
+          </select>
         </label>
-        <label class="row" style="gap:6px">
-          <input type="checkbox" id="toggle_students"/><span>إظهار نقاط الطلاب</span>
+        <label class="row" style="align-items:center;gap:6px">
+          <input type="checkbox" id="toggle_students" onchange="drawLive()" />
+          <span>إظهار نقاط الطلاب</span>
         </label>
         <button onclick="refreshMap()">عرض</button>
         <button class="ghost" onclick="drawLive()">تحديث الخريطة</button>
       </div>
     </div>
 
-    <!-- سجل المسار (فوق الخريطة) -->
+    <!-- سجل المسار التاريخي (موجود فوق الخريطة) -->
     <div class="card" style="background:#0c1424;border-color:#223046;margin:8px 0 12px;border-radius:14px;">
       <h3>سجل المسار التاريخي</h3>
       <div class="row">
@@ -124,10 +136,10 @@ button.danger{background:var(--danger)}
       </div>
       <div class="row">
         <button onclick="loadHistorical()">عرض المسار</button>
-        <button class="ghost" id="playBtn" disabled>▶ تشغيل</button>
+        <button class="ghost" onclick="togglePlayback()" id="playBtn" disabled>▶ تشغيل</button>
         <button class="ghost" onclick="clearHistorical()">مسح</button>
-        <button class="ghost" id="gpxBtn" disabled>تصدير GPX</button>
-        <button class="ghost" id="csvBtn" disabled>تصدير CSV</button>
+        <button class="ghost" onclick="exportGPX()" id="gpxBtn" disabled>تصدير GPX</button>
+        <button class="ghost" onclick="exportCSV()" id="csvBtn" disabled>تصدير CSV</button>
       </div>
       <div class="timeline">
         <input id="timeline" type="range" min="0" max="100" step="1" value="0"/>
@@ -137,10 +149,10 @@ button.danger{background:var(--danger)}
           <div id="tl_to">—</div>
         </div>
       </div>
+      <div class="small">اسحب الشريط للتقديم/التأخير، أو استخدم تشغيل/إيقاف مع سرعة القفز المحددة.</div>
     </div>
 
     <div id="map"></div>
-    <div id="conn_status" class="small" style="margin-top:8px;opacity:.9"></div>
   </div>
 </div>
 
@@ -149,52 +161,74 @@ button.danger{background:var(--danger)}
   <div class="card">
     <h3>تقرير الحضور</h3>
     <div class="row">
-      <label>اختر الباص: <select id="r_bus"></select></label>
-      <label>الفترة: 
-        <select id="r_period"><option value="morning">صباحي</option><option value="evening">مسائي</option></select>
+      <label>اختر الباص:
+        <select id="r_bus"></select>
       </label>
-      <label>التاريخ: <input id="r_date" type="date"/></label>
+      <label>الفترة:
+        <select id="r_period">
+          <option value="morning">صباحي</option>
+          <option value="evening">مسائي</option>
+        </select>
+      </label>
+      <label>التاريخ:
+        <input id="r_date" type="date"/>
+      </label>
       <button onclick="buildReport()">تحديث التقرير</button>
       <button onclick="printReport()" class="pill" style="background:#0c1424">طباعة</button>
       <button onclick="downloadCSV()" class="pill" style="background:#0c1424">تنزيل CSV</button>
     </div>
     <hr/>
-    <div class="row" style="gap:16px;flex-wrap:wrap">
-      <div>رقم الباص: <b id="info_bus_no">-</b></div>
-      <div>رقم اللوحة: <b id="info_plate">-</b></div>
-      <div>اسم الملاحظ: <b id="info_observer">-</b></div>
-      <div>التاريخ: <b id="info_date">-</b></div>
-      <div>الفترة: <b id="info_period">-</b></div>
-      <div class="row">
-        <span>صعود: <b id="count_board">0</b></span>
-        <span>نزول: <b id="count_alight">0</b></span>
-        <span>غائب: <b id="count_absent">0</b></span>
-        <span>المجموع: <b id="count_total">0</b></span>
+    <div class="grid-3">
+      <div><div class="muted">رقم الباص</div><div id="info_bus_no">-</div></div>
+      <div><div class="muted">رقم اللوحة</div><div id="info_plate">-</div></div>
+      <div><div class="muted">اسم الملاحظ</div><div id="info_observer">-</div></div>
+    </div>
+    <div class="grid-3" style="margin-top:8px">
+      <div><div class="muted">التاريخ</div><div id="info_date">-</div></div>
+      <div><div class="muted">الفترة</div><div id="info_period">-</div></div>
+      <div>
+        <div class="muted">ملخص</div>
+        <div class="stats">
+          <div class="stat"><div>صعود</div><b id="count_board">0</b></div>
+          <div class="stat"><div>نزول</div><b id="count_alight">0</b></div>
+          <div class="stat"><div>غائب</div><b id="count_absent">0</b></div>
+          <div class="stat"><div>المجموع</div><b id="count_total">0</b></div>
+        </div>
       </div>
     </div>
-    <div style="overflow:auto;margin-top:12px">
+    <div class="table-wrap" style="margin-top:12px">
       <table id="report_table">
-        <thead><tr><th>#</th><th>اسم الطالب</th><th>التاريخ / الوقت</th><th>الحدث</th><th>الفترة</th></tr></thead>
-        <tbody id="report_body"><tr><td colspan="5" style="text-align:center;opacity:.7">لا توجد بيانات بعد…</td></tr></tbody>
+        <thead>
+          <tr>
+            <th style="width:60px">#</th>
+            <th>اسم الطالب</th>
+            <th style="width:200px">التاريخ / الوقت</th>
+            <th style="width:120px">الحدث</th>
+            <th style="width:100px">الفترة</th>
+          </tr>
+        </thead>
+        <tbody id="report_body">
+          <tr><td colspan="5" class="muted" style="text-align:center">لا توجد بيانات بعد…</td></tr>
+        </tbody>
       </table>
     </div>
   </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
 /* ===== Supabase ===== */
 const SUPABASE_URL = "https://vdolempilbsofmriaohf.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkb2xlbXBpbGJzb2Ztcmlhb2hmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE0NDU1ODcsImV4cCI6MjA3NzAyMTU4N30.OOHmiasyaXS8Rz_xpmrCIonwc8wRclLqNjrrG2J4ckw";
 const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-/* ===== عناصر مساعدة ===== */
-const $ = s=>document.querySelector(s);
-const val = id => document.getElementById(id)?.value?.trim() ?? '';
+/* ===== Helpers ===== */
+const q = s=>document.querySelector(s);
+const v = id=>document.getElementById(id).value.trim();
+const num=id=>Number(v(id));
 const fmt = new Intl.DateTimeFormat('ar-QA',{dateStyle:'medium', timeStyle:'short'});
-const toArabicAction = a => a==='board'?'صعود': a==='alight'?'نزول': a==='absent'?'غائب': a;
-const toArabicPeriod = p => p==='morning'?'صباحي': p==='evening'?'مسائي': p;
-const dayRangeISO = d => { const s=new Date(d); s.setHours(0,0,0,0); const e=new Date(d); e.setHours(23,59,59,999); return {start:s.toISOString(),end:e.toISOString()}; };
+function toArabicAction(a){ return a==='board'?'صعود': a==='alight'?'نزول': a==='absent'?'غائب': a; }
+function toArabicPeriod(p){ return p==='morning'?'صباحي': p==='evening'?'مسائي': p; }
+function dayRangeISO(d){ const s=new Date(d); s.setHours(0,0,0,0); const e=new Date(d); e.setHours(23,59,59,999); return {start:s.toISOString(),end:e.toISOString()}; }
 function parsePoint(str){
   if(!str) return {lat:null,lng:null};
   const at=str.match(/@(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/); if(at) return {lat:+at[1],lng:+at[2]};
@@ -203,43 +237,30 @@ function parsePoint(str){
   return {lat:null,lng:null};
 }
 
-/* ===== فحص اتصال Supabase ===== */
-async function testConnection(){
-  const status = $('#conn_status');
-  status.textContent = 'جارِ الاتصال بقاعدة البيانات…';
-  const { data, error } = await client.from('buses').select('id').limit(1);
-  if(error){
-    status.textContent = 'خطأ في الاتصال بقاعدة البيانات: '+error.message;
-    console.error(error);
-  }else{
-    status.textContent = 'تم الاتصال بقاعدة البيانات بنجاح.';
-  }
-}
-
-/* ===== إدارة البيانات ===== */
+/* ===== إدارة ===== */
 async function createBus(){
-  const bus_no=val('bus_no'), plate=val('plate_no'), cap=Number(val('capacity'))||null;
+  const bus_no=v('bus_no'), plate=v('plate_no'), cap=num('capacity')||null;
   if(!bus_no||!plate) return alert('أدخل رقم الباص واللوحة');
   const { error } = await client.from('buses').insert({ school_bus_no: bus_no, plate_no: plate, capacity: cap });
   if(error) return alert(error.message);
-  alert('تمت إضافة الباص'); loadOptions(); drawLive();
+  alert('تمت إضافة الباص'); loadOptions();
 }
 async function createObserver(){
-  const name=val('obs_name'); if(!name) return alert('أدخل اسم الملاحظ');
+  const name=v('obs_name'); if(!name) return alert('أدخل اسم الملاحظ');
   const { error } = await client.from('profiles').insert({ full_name: name, role: 'observer' });
   if(error) return alert(error.message);
   alert('تمت إضافة الملاحظ'); loadOptions();
 }
 async function assignBus(){
-  const bus_id=Number($('#bus_select').value), obs_id=$('#observer_select').value;
+  const bus_id=+q('#bus_select').value, obs_id=q('#observer_select').value;
   if(!bus_id||!obs_id) return alert('اختر الباص والملاحظ');
   const { error } = await client.from('buses').update({ observer_id: obs_id }).eq('id', bus_id);
   if(error) return alert(error.message);
-  alert('تم الربط'); drawLive();
+  alert('تم الربط');
 }
 async function createStudent(){
-  const full_name=val('stu_name'), grade=val('stu_grade'), section=val('stu_section');
-  const p=parsePoint(val('home_point')); if(!full_name) return alert('أدخل اسم الطالب');
+  const full_name=v('stu_name'), grade=v('stu_grade'), section=v('stu_section');
+  const p=parsePoint(v('home_point')); if(!full_name) return alert('أدخل اسم الطالب');
   const { error } = await client.from('students').insert({
     full_name, grade, section,
     home_lat: (typeof p.lat==='number' && !isNaN(p.lat)) ? p.lat : null,
@@ -249,28 +270,27 @@ async function createStudent(){
   alert('تمت إضافة الطالب'); loadOptions();
 }
 async function linkStudent(){
-  const student_id=Number($('#stu_select').value), bus_id=Number($('#bus_select2').value);
+  const student_id=+q('#stu_select').value, bus_id=+q('#bus_select2').value;
   if(!student_id||!bus_id) return alert('اختر الطالب والباص');
   const { error } = await client.from('student_bus').upsert({ student_id, bus_id });
   if(error) return alert(error.message);
   alert('تم تخصيص الطالب للباص');
 }
 
-/* ===== تحميل القوائم ===== */
 let busMeta=new Map();
 async function loadOptions(){
   const { data: obs }   = await client.from('profiles').select('id, full_name').eq('role','observer').order('full_name');
   const { data: buses } = await client.from('buses').select('id, school_bus_no, plate_no, observer_id').order('school_bus_no');
   const { data: stus }  = await client.from('students').select('id, full_name').order('full_name');
 
-  $('#observer_select').innerHTML = (obs||[]).map(o=>`<option value="${o.id}">${o.full_name}</option>`).join('');
-  $('#bus_select').innerHTML  = (buses||[]).map(b=>`<option value="${b.id}">${b.school_bus_no}</option>`).join('');
-  $('#bus_select2').innerHTML = $('#bus_select').innerHTML;
-  $('#stu_select').innerHTML  = (stus||[]).map(s=>`<option value="${s.id}">${s.full_name}</option>`).join('');
+  q('#observer_select').innerHTML = (obs||[]).map(o=>`<option value="${o.id}">${o.full_name}</option>`).join('');
+  q('#bus_select').innerHTML  = (buses||[]).map(b=>`<option value="${b.id}">${b.school_bus_no}</option>`).join('');
+  q('#bus_select2').innerHTML = q('#bus_select').innerHTML;
+  q('#stu_select').innerHTML  = (stus||[]).map(s=>`<option value="${s.id}">${s.full_name}</option>`).join('');
 
-  $('#map_bus').innerHTML = `<option value="">عرض جميع الباصات</option>` + (buses||[]).map(b=>`<option value="${b.id}">${b.school_bus_no}</option>`).join('');
-  $('#r_bus').innerHTML = `<option value="">اختر الباص…</option>` + (buses||[]).map(b=>`<option value="${b.id}">${b.school_bus_no}</option>`).join('');
-  $('#h_bus').innerHTML = `<option value="">اختر الباص…</option>` + (buses||[]).map(b=>`<option value="${b.id}">${b.school_bus_no}</option>`).join('');
+  q('#map_bus').innerHTML = `<option value="">عرض جميع الباصات</option>` + (buses||[]).map(b=>`<option value="${b.id}">${b.school_bus_no}</option>`).join('');
+  q('#r_bus').innerHTML = `<option value="">اختر الباص…</option>` + (buses||[]).map(b=>`<option value="${b.id}">${b.school_bus_no}</option>`).join('');
+  q('#h_bus').innerHTML = `<option value="">اختر الباص…</option>` + (buses||[]).map(b=>`<option value="${b.id}">${b.school_bus_no}</option>`).join('');
 
   busMeta.clear(); (buses||[]).forEach(b=>busMeta.set(b.id,{no:b.school_bus_no, plate:b.plate_no, observer_id:b.observer_id}));
 }
@@ -278,38 +298,40 @@ async function loadOptions(){
 /* ===== إشعارات ===== */
 async function loadNotifications(){
   const { data: ntf } = await client.from('notifications').select('*').order('created_at',{ascending:false}).limit(60);
-  $('#notif').innerHTML = (ntf||[]).map(n=>`
-    <div class="notif"><div><b>${n.title}</b></div><div style="opacity:.85">${n.body||''}</div><div class="pill">${new Date(n.created_at).toLocaleString()}</div></div>
-  `).join('');
+  q('#notif').innerHTML = (ntf||[]).map(n=>`
+    <div class="notif">
+      <div><b>${n.title}</b></div>
+      <div style="opacity:.85">${n.body||''}</div>
+      <div class="pill">${new Date(n.created_at).toLocaleString()}</div>
+    </div>`).join('');
 }
-function clearNotificationsUI(){ $('#notif').innerHTML = ''; }
+function clearNotificationsUI(){ q('#notif').innerHTML = ''; }
 async function clearNotificationsDB(){
   if(!confirm('سيتم حذف كل الإشعارات نهائيًا. متابعة؟')) return;
   const { error } = await client.from('notifications').delete().neq('id',0);
   if(error){ alert(error.message); return; }
-  clearNotificationsUI(); alert('تم حذف جميع الإشعارات من قاعدة البيانات نهائيًا.');
+  clearNotificationsUI();
+  alert('تم حذف جميع الإشعارات من قاعدة البيانات نهائيًا.');
 }
 
-/* ===== الخريطة (اسم واحد فقط لتفادي التعارض) ===== */
-let busMap;                       // ← بدّلنا من map إلى busMap
-let busMarkers=new Map(), polylines=new Map(), selectedBusId=null;
-let studentLayer = L.layerGroup();
-let liveChannel = null;
+/* ===== خريطة + تتبّع لحظي ===== */
+let map, busMarkers=new Map(), polylines=new Map(), selectedBusId=null;
+let studentLayer = L.layerGroup();  // طبقة نقاط الطلاب
+let liveChannel = null;             // قناة Realtime
 
 function initMap(){
-  busMap = L.map('map').setView([25.285,51.531], 12);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19, attribution:'&copy; OpenStreetMap'}).addTo(busMap);
-  studentLayer.addTo(busMap);
+  map = L.map('map').setView([25.285,51.531], 11);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(map);
+  studentLayer.addTo(map);
+}
+function refreshMap(){
+  const val = q('#map_bus').value;
+  selectedBusId = val ? Number(val) : null;
+  drawLive();
+  subscribeRealtime();
 }
 
-/* فلترة الخريطة */
-window.refreshMap = function(){
-  const val = $('#map_bus').value;
-  selectedBusId = val ? Number(val) : null;
-  drawLive(); subscribeRealtime();
-};
-
-/* رسم المسارات الحية */
+/* مسارات آخر 12 ساعة + fallback آخر نقطة */
 async function drawLive(){
   try{
     const since = new Date(Date.now() - 12*60*60*1000);
@@ -319,11 +341,10 @@ async function drawLive(){
       .order('recorded_at',{ascending:true});
     if(selectedBusId) qTracks = qTracks.eq('bus_id', selectedBusId);
     const { data: tracks, error } = await qTracks;
-    if(error){ console.error(error); return; }
+    if(error){ console.log(error); return; }
 
-    // تنظيف
-    busMarkers.forEach(m=>busMap.removeLayer(m)); busMarkers.clear();
-    polylines.forEach(pl=>busMap.removeLayer(pl)); polylines.clear();
+    busMarkers.forEach(m=>map.removeLayer(m)); busMarkers.clear();
+    polylines.forEach(pl=>map.removeLayer(pl)); polylines.clear();
 
     if(tracks?.length){
       const byBus = new Map();
@@ -332,20 +353,21 @@ async function drawLive(){
       });
       byBus.forEach((pts,bid)=>{
         const latlngs = pts.map(p=>[p.lat,p.lng]);
-        const last = latlngs.at(-1);
+        const last = latlngs[latlngs.length-1];
         const label = busMeta.get(bid)?.no ? `Bus ${busMeta.get(bid).no}` : `Bus #${bid}`;
-        const pl = L.polyline(latlngs,{weight:4,opacity:.9}).addTo(busMap);
+        const pl = L.polyline(latlngs,{weight:4,opacity:.9}).addTo(map);
         polylines.set(bid,pl);
-        const mk = L.marker(last).addTo(busMap).bindTooltip(label).openTooltip();
+        const mk = L.marker(last).addTo(map).bindTooltip(label).openTooltip();
         busMarkers.set(bid,mk);
       });
       if(selectedBusId && byBus.has(selectedBusId)){
         const arr = byBus.get(selectedBusId).map(p=>[p.lat,p.lng]);
-        busMap.fitBounds(L.latLngBounds(arr),{padding:[30,30]});
+        map.fitBounds(L.latLngBounds(arr),{padding:[30,30]});
       }
     }else{
-      // fallback: آخر نقطة لكل باص
-      let lastQ = client.from('gps_tracks').select('bus_id, lat, lng, recorded_at').order('recorded_at',{ascending:false});
+      let lastQ = client.from('gps_tracks')
+        .select('bus_id, lat, lng, recorded_at')
+        .order('recorded_at',{ascending:false});
       if(selectedBusId) lastQ = lastQ.eq('bus_id', selectedBusId);
       const { data: allTracks } = await lastQ;
       if(allTracks?.length){
@@ -356,27 +378,25 @@ async function drawLive(){
         }
         latestPerBus.forEach(t=>{
           const label = busMeta.get(t.bus_id)?.no ? `Bus ${busMeta.get(t.bus_id).no}` : `Bus #${t.bus_id}`;
-          const mk = L.marker([t.lat,t.lng]).addTo(busMap).bindTooltip(label+' (آخر موقع)').openTooltip();
+          const mk = L.marker([t.lat,t.lng]).addTo(map).bindTooltip(label+' (آخر موقع)').openTooltip();
           busMarkers.set(t.bus_id, mk);
         });
-        if(selectedBusId && latestPerBus.length){ busMap.setView([latestPerBus[0].lat, latestPerBus[0].lng], 13); }
+        if(selectedBusId && latestPerBus.length){ map.setView([latestPerBus[0].lat, latestPerBus[0].lng], 13); }
       }
     }
     await drawStudentPoints();
-  }catch(e){ console.error(e); }
+  }catch(e){ console.log(e); }
 }
 
-/* نقاط الطلاب (اختياري) */
+/* نقاط الطلاب اختيارية */
 async function drawStudentPoints(){
   studentLayer.clearLayers();
-  const show = $('#toggle_students')?.checked;
+  const show = document.getElementById('toggle_students')?.checked;
   if(!show) return;
   let query = client.from('student_bus').select('bus_id, students(full_name, home_lat, home_lng)');
   if(selectedBusId) query = query.eq('bus_id', selectedBusId);
-
   const { data, error } = await query;
-  if(error){ console.error(error); return; }
-
+  if(error){ console.log(error); return; }
   (data||[]).map(r=>({bus_id:r.bus_id, ...r.students}))
     .filter(s=>s && typeof s.home_lat==='number' && typeof s.home_lng==='number')
     .forEach(s=>{
@@ -395,61 +415,110 @@ function subscribeRealtime(){
     .on('postgres_changes', { event:'INSERT', schema:'public', table:'gps_tracks', filter }, (payload) => {
       const row = payload.new; const bid = row.bus_id; const ll=[row.lat,row.lng];
       if(selectedBusId && bid!==selectedBusId) return;
-      let pl = polylines.get(bid); if(pl){ pl.addLatLng(ll); } else { pl = L.polyline([ll],{weight:4,opacity:.9}).addTo(busMap); polylines.set(bid,pl); }
+      let pl = polylines.get(bid); if(pl){ pl.addLatLng(ll); } else { pl = L.polyline([ll],{weight:4,opacity:.9}).addTo(map); polylines.set(bid,pl); }
       const label = busMeta.get(bid)?.no ? `Bus ${busMeta.get(bid).no}` : `Bus #${bid}`;
-      let mk = busMarkers.get(bid); if(mk){ mk.setLatLng(ll); } else { mk = L.marker(ll).addTo(busMap).bindTooltip(label).openTooltip(); busMarkers.set(bid,mk); }
+      let mk = busMarkers.get(bid); if(mk){ mk.setLatLng(ll); } else { mk = L.marker(ll).addTo(map).bindTooltip(label).openTooltip(); busMarkers.set(bid,mk); }
     })
     .subscribe();
 }
 
-/* ===== سجل المسار التاريخي مع الشريط ===== */
-let histLayer = L.layerGroup();
-let histPolyline = null, histStartMarker = null, histEndMarker = null, runnerMarker=null;
-let histPoints = []; let histTimer=null; let histFrom=0, histTo=0, histNow=0; let stepSeconds=60;
+/* ===== سجل المسار التاريخي (شريط زمني + سرعات + تصدير) ===== */
+let histLayer = L.layerGroup(); // طبقة تاريخية مستقلة
+let histPolyline = null;
+let histStartMarker = null;
+let histEndMarker = null;
+let runnerMarker = null;
+let histPoints = []; // [{lat,lng,ts:Date}]
+let histFrom=0, histTo=0, histNow=0;
+let histTimer = null;
+let stepSeconds = 60; // افتراضي: دقيقة
 
-function ensureHistLayer(){ if(!busMap.hasLayer(histLayer)) histLayer.addTo(busMap); }
-function setStepFromSelect(){ stepSeconds = Math.max(1, Number($('#speedSel').value||'60')); }
+function ensureHistLayer(){ if(!map.hasLayer(histLayer)) histLayer.addTo(map); }
+function setStepFromSelect(){ stepSeconds = Math.max(1, Number(q('#speedSel').value||'60')); }
 function msToLabel(ms){ return new Date(ms).toLocaleString('ar-QA'); }
-function updateTimelineLabels(){ $('#tl_from').textContent=msToLabel(histFrom); $('#tl_to').textContent=msToLabel(histTo); $('#tl_now').textContent=msToLabel(histNow); }
-function setTimelineBounds(){ const tl=$('#timeline'); tl.min=String(histFrom); tl.max=String(histTo); tl.step='1000'; tl.value=String(histNow); updateTimelineLabels(); }
-function onScrub(){ if(histPoints.length===0) return; histNow=Number($('#timeline').value); drawRunnerAt(histNow); updateTimelineLabels(); }
-function findLastPointIdxAt(ms){ let lo=0,hi=histPoints.length-1,ans=-1; while(lo<=hi){const mid=(lo+hi)>>1; const t=histPoints[mid].ts.getTime(); if(t<=ms){ans=mid; lo=mid+1;}else hi=mid-1;} return ans; }
-function drawRunnerAt(ms){
-  const idx = findLastPointIdxAt(ms);
-  if(idx<0){ const p0=histPoints[0]; if(!runnerMarker) runnerMarker=L.marker([p0.lat,p0.lng]).addTo(histLayer); else runnerMarker.setLatLng([p0.lat,p0.lng]); if(histPolyline) histPolyline.setLatLngs([]); runnerMarker.bindTooltip(msToLabel(ms)).openTooltip(); return; }
-  const pts=histPoints.slice(0,idx+1).map(p=>[p.lat,p.lng]);
-  if(!runnerMarker) runnerMarker=L.marker(pts[idx]).addTo(histLayer); else runnerMarker.setLatLng(pts[idx]);
-  if(!histPolyline) histPolyline=L.polyline(pts,{weight:5,opacity:.9}).addTo(histLayer); else histPolyline.setLatLngs(pts);
-  runnerMarker.bindTooltip(msToLabel(ms)).openTooltip();
+function updateTimelineLabels(){
+  q('#tl_from').textContent = msToLabel(histFrom);
+  q('#tl_to').textContent   = msToLabel(histTo);
+  q('#tl_now').textContent  = msToLabel(histNow);
+}
+function setTimelineBounds(){
+  const tl = q('#timeline');
+  tl.min = String(histFrom);
+  tl.max = String(histTo);
+  tl.step = '1000'; // خطوة السحب = ثانية
+  tl.value = String(histNow);
+  updateTimelineLabels();
+}
+function onScrub(){
+  if(histPoints.length===0) return;
+  const tl = q('#timeline');
+  histNow = Number(tl.value);
+  drawRunnerAt(histNow);
+  updateTimelineLabels();
+}
+function findLastPointIdxAt(timeMs){
+  // آخر نقطة <= الوقت (بحث ثنائي)
+  let lo=0, hi=histPoints.length-1, ans=-1;
+  while(lo<=hi){
+    const mid=(lo+hi)>>1;
+    const t = histPoints[mid].ts.getTime();
+    if(t<=timeMs){ ans=mid; lo=mid+1; } else hi=mid-1;
+  }
+  return ans;
+}
+function drawRunnerAt(timeMs){
+  if(histPoints.length===0) return;
+  const idx = findLastPointIdxAt(timeMs);
+  if(idx<0){
+    const p0=histPoints[0];
+    if(!runnerMarker) runnerMarker=L.marker([p0.lat,p0.lng]).addTo(histLayer);
+    else runnerMarker.setLatLng([p0.lat,p0.lng]);
+    if(histPolyline) histPolyline.setLatLngs([]);
+    runnerMarker.bindTooltip(msToLabel(timeMs)).openTooltip();
+    return;
+  }
+  const pts = histPoints.slice(0, idx+1).map(p=>[p.lat,p.lng]);
+  if(!runnerMarker) runnerMarker=L.marker(pts[idx]).addTo(histLayer);
+  else runnerMarker.setLatLng(pts[idx]);
+  if(!histPolyline) histPolyline=L.polyline(pts,{weight:5,opacity:.9}).addTo(histLayer);
+  else histPolyline.setLatLngs(pts);
+  runnerMarker.bindTooltip(msToLabel(timeMs)).openTooltip();
 }
 async function loadHistorical(){
-  const busId = Number($('#h_bus').value)||null;
-  const from = $('#h_from').value, to=$('#h_to').value;
-  if(!busId) return alert('اختر الباص'); if(!from||!to) return alert('حدد من/إلى');
+  const busId = +q('#h_bus').value || null;
+  const from = q('#h_from').value; const to = q('#h_to').value;
+  if(!busId) return alert('اختر الباص');
+  if(!from || !to) return alert('حدد من/إلى (تاريخ/وقت)');
 
-  ensureHistLayer(); clearHistorical();
+  ensureHistLayer();
+  clearHistorical(); // امسح السابق لكن أبقِ الطبقة
 
+  // جلب النقاط ضمن النطاق
   const { data, error } = await client.from('gps_tracks')
-    .select('lat,lng,recorded_at').eq('bus_id', busId)
+    .select('lat,lng,recorded_at')
+    .eq('bus_id', busId)
     .gte('recorded_at', new Date(from).toISOString())
     .lte('recorded_at', new Date(to).toISOString())
     .order('recorded_at',{ascending:true});
   if(error){ alert(error.message); return; }
-  if(!data?.length){ alert('لا توجد نقاط ضمن الفترة المحددة.'); disableHist(); return; }
+  if(!data?.length){ alert('لا توجد نقاط ضمن الفترة المحددة.'); disableHistActions(); return; }
 
-  histPoints = data.map(r=>({lat:r.lat,lng:r.lng,ts:new Date(r.recorded_at)}));
-  histFrom = histPoints[0].ts.getTime(); histTo = histPoints.at(-1).ts.getTime(); histNow = histFrom;
+  histPoints = data.map(r=>({lat:r.lat, lng:r.lng, ts:new Date(r.recorded_at)}));
+  histFrom = histPoints[0].ts.getTime();
+  histTo   = histPoints.at(-1).ts.getTime();
+  histNow  = histFrom;
 
+  // علامات البداية والنهاية
   histStartMarker = L.marker([histPoints[0].lat,histPoints[0].lng]).addTo(histLayer).bindTooltip('بداية: '+histPoints[0].ts.toLocaleString());
   histEndMarker   = L.marker([histPoints.at(-1).lat,histPoints.at(-1).lng]).addTo(histLayer).bindTooltip('نهاية: '+histPoints.at(-1).ts.toLocaleString());
 
-  setTimelineBounds(); drawRunnerAt(histNow);
-  busMap.fitBounds(L.latLngBounds(histPoints.map(p=>[p.lat,p.lng])),{padding:[30,30]});
+  setTimelineBounds();
+  drawRunnerAt(histNow);
+  map.fitBounds(L.latLngBounds(histPoints.map(p=>[p.lat,p.lng])), { padding:[30,30] });
 
-  $('#playBtn').disabled=false; $('#gpxBtn').disabled=false; $('#csvBtn').disabled=false;
-  $('#playBtn').onclick = togglePlayback;
-  $('#timeline').oninput = onScrub;
-  $('#speedSel').onchange = setStepFromSelect;
+  // فعّل الأزرار
+  q('#playBtn').disabled=false; q('#gpxBtn').disabled=false; q('#csvBtn').disabled=false;
+  q('#playBtn').textContent='▶ تشغيل';
 }
 function clearHistorical(){
   if(histTimer){ clearInterval(histTimer); histTimer=null; }
@@ -458,23 +527,36 @@ function clearHistorical(){
   if(histEndMarker){ histLayer.removeLayer(histEndMarker); histEndMarker=null; }
   if(runnerMarker){ histLayer.removeLayer(runnerMarker); runnerMarker=null; }
   histPoints=[]; histFrom=0; histTo=0; histNow=0;
-  $('#playBtn').disabled=true; $('#gpxBtn').disabled=true; $('#csvBtn').disabled=true;
-  $('#tl_from').textContent='—'; $('#tl_to').textContent='—'; $('#tl_now').textContent='—';
-  const tl=$('#timeline'); tl.value='0'; tl.min='0'; tl.max='100';
+  q('#playBtn').disabled=true; q('#gpxBtn').disabled=true; q('#csvBtn').disabled=true;
+  q('#tl_from').textContent='—'; q('#tl_to').textContent='—'; q('#tl_now').textContent='—';
+  const tl=q('#timeline'); tl.value='0'; tl.min='0'; tl.max='100';
 }
-function disableHist(){ $('#playBtn').disabled=true; $('#gpxBtn').disabled=true; $('#csvBtn').disabled=true; }
+function disableHistActions(){
+  q('#playBtn').disabled = (histPoints.length===0);
+  q('#gpxBtn').disabled  = (histPoints.length===0);
+  q('#csvBtn').disabled  = (histPoints.length===0);
+}
 function togglePlayback(){
   if(histPoints.length===0) return;
-  const tl = $('#timeline');
-  if(histTimer){ clearInterval(histTimer); histTimer=null; $('#playBtn').textContent='▶ تشغيل'; return; }
-  $('#playBtn').textContent='⏸ إيقاف مؤقت';
+  const tl = q('#timeline');
+
+  if(histTimer){ // إيقاف
+    clearInterval(histTimer); histTimer=null; q('#playBtn').textContent='▶ تشغيل'; return;
+  }
+  // تشغيل: نقفز بقيمة stepSeconds في الزمن كل 200ms (سلاسة عالية)
+  q('#playBtn').textContent='⏸ إيقاف مؤقت';
   histTimer = setInterval(()=>{
     histNow = Math.min(histNow + Math.max(1,stepSeconds)*1000, histTo);
     tl.value = String(histNow);
-    drawRunnerAt(histNow); updateTimelineLabels();
-    if(histNow>=histTo){ clearInterval(histTimer); histTimer=null; $('#playBtn').textContent='▶ تشغيل'; }
+    drawRunnerAt(histNow);
+    updateTimelineLabels();
+    if(histNow>=histTo){
+      clearInterval(histTimer); histTimer=null; q('#playBtn').textContent='▶ تشغيل';
+    }
   }, 200);
 }
+
+/* تصدير GPX */
 function exportGPX(){
   if(histPoints.length===0) return;
   const gpxHeader = `<?xml version="1.0" encoding="UTF-8"?>
@@ -485,6 +567,8 @@ function exportGPX(){
   const blob = new Blob([gpxHeader+'\n'+gpxBody+'\n'+gpxFooter], {type:'application/gpx+xml;charset=utf-8;'});
   const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='bus_track.gpx'; a.click();
 }
+
+/* تصدير CSV */
 function exportCSV(){
   if(histPoints.length===0) return;
   const rows = ['lat,lng,recorded_at'].concat(histPoints.map(p=>`${p.lat},${p.lng},${p.ts.toISOString()}`));
@@ -493,22 +577,21 @@ function exportCSV(){
 }
 
 /* ===== تقرير الحضور ===== */
-const infoBusNo=$('#info_bus_no'), infoPlate=$('#info_plate'), infoObserver=$('#info_observer'),
-      infoDate=$('#info_date'), infoPeriod=$('#info_period'),
-      countBoard=$('#count_board'), countAlight=$('#count_alight'),
-      countAbsent=$('#count_absent'), countTotal=$('#count_total'),
-      reportBody=$('#report_body');
-
+const infoBusNo=q('#info_bus_no'), infoPlate=q('#info_plate'), infoObserver=q('#info_observer'),
+      infoDate=q('#info_date'), infoPeriod=q('#info_period'),
+      countBoard=q('#count_board'), countAlight=q('#count_alight'),
+      countAbsent=q('#count_absent'), countTotal=q('#count_total'),
+      reportBody=q('#report_body');
 async function getBusInfo(busId){
   const { data: bus } = await client.from('buses').select('id, school_bus_no, plate_no, observer_id').eq('id', busId).single();
   if(!bus) return {bus_no:'-',plate:'-',observer:'-'};
   let obs='-'; if(bus.observer_id){ const { data:o } = await client.from('profiles').select('full_name').eq('id', bus.observer_id).single(); if(o?.full_name) obs=o.full_name; }
   return {bus_no:bus.school_bus_no, plate:bus.plate_no, observer:obs};
 }
-window.buildReport = async function(){
-  const busId = Number($('#r_bus').value)||null;
-  const period = $('#r_period').value;
-  const dateStr = $('#r_date').value;
+async function buildReport(){
+  const busId = +q('#r_bus').value || null;
+  const period = q('#r_period').value;
+  const dateStr = q('#r_date').value;
   if(!busId) return alert('اختر الباص'); if(!dateStr) return alert('اختر التاريخ');
 
   const bi = await getBusInfo(busId);
@@ -526,7 +609,7 @@ window.buildReport = async function(){
   if(error){ alert(error.message); return; }
 
   if(!rows?.length){
-    reportBody.innerHTML = `<tr><td colspan="5" style="text-align:center;opacity:.7">لا توجد سجلات لهذه المعايير.</td></tr>`;
+    reportBody.innerHTML = `<tr><td colspan="5" class="muted" style="text-align:center">لا توجد سجلات لهذه المعايير.</td></tr>`;
   }else{
     reportBody.innerHTML = rows.map((r,i)=>{
       const name=r.students?.full_name||'—'; const ts=r.event_time?fmt.format(new Date(r.event_time)):'—';
@@ -538,8 +621,8 @@ window.buildReport = async function(){
   const nAbsent=rows.filter(r=>r.action==='absent').length;
   countBoard.textContent=nBoard; countAlight.textContent=nAlight; countAbsent.textContent=nAbsent; countTotal.textContent=rows.length;
 }
-window.printReport = function(){ window.print(); }
-window.downloadCSV = function(){
+function printReport(){ window.print(); }
+function downloadCSV(){
   const tbl = document.getElementById('report_table'); if(!tbl) return;
   let csv = []; const headers = Array.from(tbl.querySelectorAll('thead th')).map(th=>th.textContent.trim()); csv.push(headers.join(','));
   const rows = Array.from(tbl.querySelectorAll('tbody tr'));
@@ -548,44 +631,31 @@ window.downloadCSV = function(){
     if(cells.length===headers.length) csv.push(cells.join(','));
   });
   const blob = new Blob([`\uFEFF${csv.join('\n')}`], {type:'text/csv;charset=utf-8;'});
-  const a = document.createElement('a'); const d = ($('#r_date').value || new Date().toISOString().slice(0,10));
-  const p = $('#r_period').value==='morning'?'صباحي':'مسائي';
+  const a = document.createElement('a'); const d = (q('#r_date').value || new Date().toISOString().slice(0,10));
+  const p = q('#r_period').value==='morning'?'صباحي':'مسائي';
   a.href = URL.createObjectURL(blob); a.download = `تقرير_${infoBusNo.textContent||'باص'}_${p}_${d}.csv`; a.click();
 }
 
-/* ===== إقلاع الصفحة ===== */
-(async function boot(){
+/* ===== Boot ===== */
+(async ()=>{
+  await loadOptions();
   initMap();
-  await testConnection();          // فحص الربط
-  await loadOptions();             // تحميل القوائم
-  await drawLive();                // رسم أولي
-  await loadNotifications();       // إشعارات
-  subscribeRealtime();             // بثّ حيّ
-  setInterval(drawLive, 10000);    // تحديث احتياطي
+  await drawLive();
+  await loadNotifications();
+  subscribeRealtime();
+  setInterval(drawLive, 10000);
+  q('#r_date').value = new Date().toISOString().slice(0,10);
 
-  // تعبئة افتراضية لتاريخين السجل
-  const now = new Date(); const twoHrsAgo = new Date(now.getTime()-2*60*60*1000);
-  const toLocalInput = d=>{ const z=new Date(d.getTime()-d.getTimezoneOffset()*60000); return z.toISOString().slice(0,16); }
-  $('#h_from').value = toLocalInput(twoHrsAgo);
-  $('#h_to').value   = toLocalInput(now);
-  document.getElementById('r_date').value = new Date().toISOString().slice(0,10);
+  // تعبئة أولية لنطاق ساعتين للسجل
+  const now = new Date();
+  const twoHrsAgo = new Date(now.getTime()-2*60*60*1000);
+  const toLocalInput = (d)=>{ const z=new Date(d.getTime()-d.getTimezoneOffset()*60000); return z.toISOString().slice(0,16); }
+  q('#h_from').value = toLocalInput(twoHrsAgo);
+  q('#h_to').value   = toLocalInput(now);
 
-  // أحداث سجل المسار
-  document.getElementById('speedSel').addEventListener('change', ()=>{ stepSeconds = Math.max(1, Number($('#speedSel').value||'60')); });
-  document.getElementById('playBtn').addEventListener('click', togglePlayback);
-  document.getElementById('timeline').addEventListener('input', onScrub);
+  // ربط تحكم السرعة والسحب
+  q('#speedSel').addEventListener('change', setStepFromSelect);
+  q('#timeline').addEventListener('input', onScrub);
 })();
-
-/* تعريض الدوال للازرار داخل HTML */
-window.createBus=createBus; window.createObserver=createObserver; window.assignBus=assignBus;
-window.createStudent=createStudent; window.linkStudent=linkStudent;
-window.loadNotifications=loadNotifications; window.clearNotificationsUI=clearNotificationsUI; window.clearNotificationsDB=clearNotificationsDB;
-window.drawLive=drawLive;
-
-/* تصدير */
-window.loadHistorical=loadHistorical; window.clearHistorical=clearHistorical;
-window.exportGPX=exportGPX; window.exportCSV=exportCSV;
-
-}); // DOMContentLoaded
 </script>
 </body></html>
