@@ -1,0 +1,97 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>وليّ الأمر – FMS Lite</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#0f172a;--card:#101826;--text:#e7edf6;--accent:#22c55e;--accent2:#38bdf8}
+body{margin:0;background:#0b1020;color:var(--text);font-family:"Tajawal",system-ui}
+header{padding:14px 18px;display:flex;gap:10px;align-items:center;justify-content:space-between;background:#0c1222;border-bottom:1px solid #1e293b}
+.grid{display:grid;grid-template-columns:1fr 480px;gap:16px;padding:16px}
+.card{background:#101826;border:1px solid #203046;border-radius:18px;padding:14px}
+input,button{width:100%;padding:10px;border-radius:12px;border:1px solid #243043;background:#0c1424;color:var(--text);margin:6px 0}
+button{cursor:pointer;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;font-weight:700}
+.kid{border-bottom:1px dashed #2a3a51;padding:10px 0}
+.tag{padding:2px 8px;border:1px solid #2a3a51;border-radius:999px;font-size:12px}
+#map{height:560px;border-radius:18px;border:1px solid #223046}
+</style>
+</head><body>
+<header>
+  <div>👨‍👩‍👧 صفحة وليّ الأمر</div>
+  <nav><a href="admin.html">المشرف</a> • <a href="observer.html">الملاحظ</a></nav>
+</header>
+
+<div class="grid">
+  <div class="card">
+    <h3>ابحث عن ابنك بالاسم</h3>
+    <input id="q" placeholder="اكتب اسم الطالب..." oninput="searchKids()" />
+    <div id="kids">اكتب الاسم للبحث…</div>
+  </div>
+  <div class="card">
+    <h3>الخريطة (مواقع الطلاب المطابقين)</h3>
+    <div id="map"></div>
+  </div>
+</div>
+
+<div class="grid" style="grid-template-columns:1fr;">
+  <div class="card">
+    <h3>آخر الإشعارات العامة</h3>
+    <div id="notif"></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://vdolempilbsofmriaohf.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkb2xlbXBpbGJzb2Ztcmlhb2hmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE0NDU1ODcsImV4cCI6MjA3NzAyMTU4N30.OOHmiasyaXS8Rz_xpmrCIonwc8wRclLqNjrrG2J4ckw";
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let map, kidMarkers=[];
+function initMap(){
+  map = L.map('map').setView([25.285,51.531], 11);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19, attribution:'&copy; OpenStreetMap'}).addTo(map);
+}
+async function searchKids(){
+  const text = document.getElementById('q').value.trim();
+  const wrap = document.getElementById('kids');
+  kidMarkers.forEach(m=>map.removeLayer(m)); kidMarkers=[];
+  if(!text){ wrap.textContent='اكتب الاسم للبحث…'; return; }
+  const { data: kids, error } = await client.from('students')
+    .select('id, full_name, home_lat, home_lng')
+    .ilike('full_name', `%${text}%`).limit(50);
+  if(error){ wrap.textContent=error.message; return; }
+  let html = '', first=null;
+  for(const k of (kids||[])){
+    const { data: ev } = await client.from('attendance_events')
+      .select('action, period, event_time, bus_id')
+      .eq('student_id', k.id)
+      .order('event_time',{ascending:false}).limit(1);
+    const last = ev?.[0];
+    html += `<div class="kid">
+      <div><b>${k.full_name}</b></div>
+      <div class="tag">${ last ? (last.action+' – '+last.period+' – '+new Date(last.event_time).toLocaleString() + ' – Bus ' + (last.bus_id??'?')) : 'لا توجد أحداث' }</div>
+    </div>`;
+    if(k.home_lat && k.home_lng){
+      const m=L.marker([k.home_lat,k.home_lng]).addTo(map)
+        .bindPopup(`<b>${k.full_name}</b><br/><a target="_blank" href="https://www.google.com/maps/?q=${k.home_lat},${k.home_lng}">فتح Google Maps</a>`);
+      kidMarkers.push(m);
+      if(!first) first=[k.home_lat,k.home_lng];
+    }
+  }
+  wrap.innerHTML = html || 'لا نتائج.';
+  if(first) map.setView(first, 13);
+}
+async function loadNotifications(){
+  const { data: ntf } = await client.from('notifications')
+    .select('*').order('created_at',{ascending:false}).limit(50);
+  document.getElementById('notif').innerHTML = (ntf||[]).map(n=>`
+    <div class="kid">
+      <div><b>${n.title}</b></div>
+      <div style="opacity:.85">${n.body||''}</div>
+      <div class="tag">${new Date(n.created_at).toLocaleString()}</div>
+    </div>
+  `).join('');
+}
+(async ()=>{ initMap(); await loadNotifications(); setInterval(loadNotifications, 12000); })();
+</script>
+</body></html>
