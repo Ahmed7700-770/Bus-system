@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="ar" dir="rtl">
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -7,94 +8,703 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
-:root{--bg:#0f172a;--card:#101826;--ink:#e7edf6;--muted:#97a6ba;--line:#223046;--ok:#22c55e;--ok2:#38bdf8;--danger:#ef4444}
-*{box-sizing:border-box} body{margin:0;background:linear-gradient(120deg,#0b1020,#0f172a);color:var(--ink);font-family:"Tajawal",system-ui}
-header{padding:14px 18px;background:#0c1222;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center}
-a{color:#aee3ff;text-decoration:none}
-.container{padding:16px;display:grid;grid-template-columns:360px 1fr;gap:16px}
-.container.single{grid-template-columns:1fr}
-.card{background:#101826;border:1px solid var(--line);border-radius:18px;padding:14px}
-input,select,button{width:100%;padding:10px;border-radius:12px;border:1px solid #243043;background:#0c1424;color:var(--ink);margin:6px 0}
-button{cursor:pointer;background:linear-gradient(135deg,var(--ok),var(--ok2));border:none;font-weight:700}
-button.ghost{background:#0c1424;border:1px solid #243043}
-button.danger{background:var(--danger)}
-#map{height:520px;border-radius:18px;border:1px solid #223046}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.list{max-height:220px;overflow:auto}
-.notif{padding:8px;border-bottom:1px dashed #2a3a51}
-.pill{display:inline-block;padding:2px 8px;border:1px solid #2a3a51;border-radius:999px;font-size:12px}
-.hint{font-size:12px;opacity:.75}
-hr{border:none;border-top:1px solid #223046;margin:14px 0}
-.table-wrap{overflow:auto}
-table{width:100%;border-collapse:collapse}
-th,td{padding:10px;border-bottom:1px solid #223046;text-align:right}
-thead th{background:#0c1424}
-.stats{display:flex;gap:10px;flex-wrap:wrap}
-.stat{background:#0c1424;border:1px solid #243043;border-radius:12px;padding:8px 12px}
-.stat b{font-size:18px}
-.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.badge{padding:2px 8px;border:1px solid #2a3a51;border-radius:999px;font-size:12px}
-.small{font-size:12px;opacity:.8}
-.timeline{display:grid;gap:8px}
-.timeline .labels{display:flex;justify-content:space-between;font-size:12px;color:#9fb0c8}
-.timeline input[type=range]{width:100%}
+:root {
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --ink: #1e293b;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --ok: #10b981;
+  --ok2: #0ea5e9;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --glass: rgba(255, 255, 255, 0.7);
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Tajawal", system-ui;
+  background: linear-gradient(135deg, #f0f4f8, #e2e8f0);
+  color: var(--ink);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+header {
+  padding: 16px 24px;
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+header div {
+  font-weight: 700;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+a {
+  color: var(--ok2);
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+a:hover {
+  color: var(--ok);
+}
+
+.container {
+  padding: 20px;
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 20px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.container.single {
+  grid-template-columns: 1fr;
+}
+
+.card {
+  background: var(--card);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--line);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-2px);
+}
+
+.card h3 {
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card h4 {
+  margin: 18px 0 10px;
+  color: var(--ok2);
+  font-size: 1.1rem;
+}
+
+input, select, button {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  margin: 8px 0;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--ok2);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+}
+
+button {
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--ok), var(--ok2));
+  border: none;
+  font-weight: 700;
+  color: white;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(14, 165, 233, 0.3);
+}
+
+button.ghost {
+  background: var(--glass);
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+button.ghost:hover {
+  background: var(--bg);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+button.danger {
+  background: var(--danger);
+}
+
+button.danger:hover {
+  background: #dc2626;
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+}
+
+button.warning {
+  background: var(--warning);
+}
+
+button.warning:hover {
+  background: #d97706;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+}
+
+#map {
+  height: 520px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.list {
+  max-height: 220px;
+  overflow: auto;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  padding: 10px;
+}
+
+.notif {
+  padding: 12px;
+  border-bottom: 1px dashed var(--line);
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notif:hover {
+  background: var(--bg);
+  border-radius: 8px;
+}
+
+.notif-content {
+  flex: 1;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  font-size: 14px;
+  background: var(--glass);
+  backdrop-filter: blur(5px);
+  transition: all 0.3s ease;
+}
+
+.pill:hover {
+  background: var(--ok2);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.hint {
+  font-size: 12px;
+  opacity: 0.75;
+  margin-top: 5px;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 16px 0;
+}
+
+.table-wrap {
+  overflow: auto;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 12px;
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+}
+
+thead th {
+  background: var(--bg);
+  font-weight: 700;
+}
+
+tbody tr:hover {
+  background: var(--bg);
+}
+
+.stats {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 16px;
+  text-align: center;
+  flex: 1;
+  min-width: 100px;
+}
+
+.stat b {
+  font-size: 24px;
+  color: var(--ok2);
+  display: block;
+  margin-top: 5px;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.badge {
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  font-size: 12px;
+  background: var(--glass);
+}
+
+.small {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.timeline {
+  display: grid;
+  gap: 10px;
+}
+
+.timeline .labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.timeline input[type=range] {
+  width: 100%;
+  height: 6px;
+  border-radius: 5px;
+  background: var(--bg);
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.timeline input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--ok2);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.timeline input[type=range]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--ok2);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 10px;
+}
+
+.tab {
+  padding: 10px 20px;
+  border-radius: 10px;
+  background: var(--bg);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tab.active {
+  background: var(--ok2);
+  color: white;
+}
+
+.tab:hover:not(.active) {
+  background: var(--line);
+}
+
+.management-section {
+  display: none;
+}
+
+.management-section.active {
+  display: block;
+}
+
+/* تحسين أيقونات الخريطة */
+.bus-icon {
+  background-color: #3b82f6;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+  width: 40px;
+  height: 40px;
+}
+
+.student-icon {
+  background-color: #10b981;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+  width: 32px;
+  height: 32px;
+}
+
+/* تحسين سجل المسار التاريخي */
+.historical-controls {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.historical-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: var(--bg);
+  border-radius: 16px;
+  border: 1px solid var(--line);
+}
+
+.historical-playback {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: var(--bg);
+  border-radius: 16px;
+  border: 1px solid var(--line);
+}
+
+.playback-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.playback-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.playback-buttons button {
+  width: auto;
+  padding: 10px 16px;
+}
+
+.export-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.export-buttons button {
+  width: auto;
+  padding: 10px 16px;
+}
+
+/* تحسين قوائم الإدارة */
+.management-list {
+  margin-top: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+}
+
+.management-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.management-item:hover {
+  background: var(--bg);
+}
+
+.management-item:last-child {
+  border-bottom: none;
+}
+
+.item-info {
+  flex: 1;
+}
+
+.item-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.item-actions button {
+  width: auto;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--muted);
+  width: auto;
+  padding: 0;
+}
+
+.modal-close:hover {
+  color: var(--danger);
+  background: none;
+  box-shadow: none;
+  transform: none;
+}
+
+@media (max-width: 1200px) {
+  .container {
+    grid-template-columns: 1fr;
+  }
+  
+  .grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+  
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+  
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .stats {
+    flex-direction: column;
+  }
+  
+  .historical-header, .historical-playback {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .playback-controls, .playback-buttons, .export-buttons {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .management-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .item-actions {
+    align-self: stretch;
+    justify-content: space-between;
+  }
+}
 </style>
 </head>
 <body>
 <header>
-  <div>🚍 نظام النقل – لوحة المشرف</div>
+  <div><i class="fas fa-bus"></i> نظام النقل – لوحة المشرف</div>
   <nav class="row">
-    <a class="pill" href="observer.html">الملاحظ</a>
-    <a class="pill" href="parent.html">وليّ الأمر</a>
+    <a class="pill" href="observer.html"><i class="fas fa-eye"></i> الملاحظ</a>
+    <a class="pill" href="parent.html"><i class="fas fa-user"></i> وليّ الأمر</a>
   </nav>
 </header>
 
 <div class="container">
   <!-- إدارة -->
   <div class="card">
-    <h3>إدارة البيانات</h3>
-
-    <h4>1) إضافة باص</h4>
-    <input id="bus_no" placeholder="رقم الباص بالمدرسة"/>
-    <input id="plate_no" placeholder="رقم اللوحة"/>
-    <input id="capacity" type="number" placeholder="السعة (اختياري)"/>
-    <button onclick="createBus()">إضافة باص</button>
-
-    <h4>2) إضافة ملاحظ</h4>
-    <input id="obs_name" placeholder="اسم الملاحظ"/>
-    <button onclick="createObserver()">إضافة ملاحظ</button>
-
-    <h4>3) ربط باص بملاحظ</h4>
-    <div class="row">
-      <select id="bus_select"></select>
-      <select id="observer_select"></select>
+    <h3><i class="fas fa-cogs"></i> إدارة البيانات</h3>
+    
+    <div class="tabs">
+      <div class="tab active" data-tab="bus-management"><i class="fas fa-bus"></i> إدارة الباصات</div>
+      <div class="tab" data-tab="observer-management"><i class="fas fa-user-tie"></i> إدارة الملاحظين</div>
+      <div class="tab" data-tab="student-management"><i class="fas fa-user-graduate"></i> إدارة الطلاب</div>
     </div>
-    <button onclick="assignBus()">ربط</button>
+    
+    <!-- إدارة الباصات -->
+    <div id="bus-management" class="management-section active">
+      <h4><i class="fas fa-plus-circle"></i> إضافة باص</h4>
+      <input id="bus_no" placeholder="رقم الباص بالمدرسة"/>
+      <input id="plate_no" placeholder="رقم اللوحة"/>
+      <input id="capacity" type="number" placeholder="السعة (اختياري)"/>
+      <button onclick="createBus()"><i class="fas fa-plus"></i> إضافة باص</button>
 
-    <h4>4) إضافة طالب</h4>
-    <input id="stu_name" placeholder="اسم الطالب"/>
-    <div class="row">
-      <input id="stu_grade" placeholder="الصف"/>
-      <input id="stu_section" placeholder="الشعبة"/>
+      <h4><i class="fas fa-link"></i> ربط باص بملاحظ</h4>
+      <div class="row">
+        <select id="bus_select"></select>
+        <select id="observer_select"></select>
+      </div>
+      <button onclick="assignBus()"><i class="fas fa-link"></i> ربط</button>
+      
+      <h4><i class="fas fa-list"></i> الباصات المسجلة</h4>
+      <div id="buses_list" class="management-list"></div>
     </div>
-    <input id="home_point" placeholder="إحداثي واحد: 25.285,51.531 أو رابط خرائط Google"/>
-    <div class="hint">نقبل lat,lng أو رابط فيه @lat,lng أو ?q=lat,lng</div>
-    <button onclick="createStudent()">إضافة طالب</button>
-
-    <h4>5) تخصيص الطالب للباص</h4>
-    <div class="row">
-      <select id="stu_select"></select>
-      <select id="bus_select2"></select>
+    
+    <!-- إدارة الملاحظين -->
+    <div id="observer-management" class="management-section">
+      <h4><i class="fas fa-user-plus"></i> إضافة ملاحظ</h4>
+      <input id="obs_name" placeholder="اسم الملاحظ"/>
+      <button onclick="createObserver()"><i class="fas fa-plus"></i> إضافة ملاحظ</button>
+      
+      <h4><i class="fas fa-list"></i> الملاحظين المسجلين</h4>
+      <div id="observers_list" class="management-list"></div>
     </div>
-    <button onclick="linkStudent()">تخصيص</button>
+    
+    <!-- إدارة الطلاب -->
+    <div id="student-management" class="management-section">
+      <h4><i class="fas fa-user-plus"></i> إضافة طالب</h4>
+      <input id="stu_name" placeholder="اسم الطالب"/>
+      <div class="row">
+        <input id="stu_grade" placeholder="الصف"/>
+        <input id="stu_section" placeholder="الشعبة"/>
+      </div>
+      <input id="home_point" placeholder="إحداثي واحد: 25.285,51.531 أو رابط خرائط Google"/>
+      <div class="hint">نقبل lat,lng أو رابط فيه @lat,lng أو ?q=lat,lng</div>
+      <button onclick="createStudent()"><i class="fas fa-plus"></i> إضافة طالب</button>
 
-    <h4>الإشعارات</h4>
+      <h4><i class="fas fa-user-check"></i> تخصيص الطالب للباص</h4>
+      <div class="row">
+        <select id="stu_select"></select>
+        <select id="bus_select2"></select>
+      </div>
+      <button onclick="linkStudent()"><i class="fas fa-link"></i> تخصيص</button>
+      
+      <h4><i class="fas fa-list"></i> الطلاب المسجلين</h4>
+      <div id="students_list" class="management-list"></div>
+    </div>
+
+    <hr>
+    
+    <h4><i class="fas fa-bell"></i> الإشعارات</h4>
     <div class="row">
-      <button class="ghost" onclick="loadNotifications()">تحديث الإشعارات</button>
-      <button class="ghost" onclick="clearNotificationsUI()">مسح من الصفحة</button>
-      <button class="danger" onclick="clearNotificationsDB()">مسح من قاعدة البيانات (نهائي)</button>
+      <button class="ghost" onclick="loadNotifications()"><i class="fas fa-sync-alt"></i> تحديث الإشعارات</button>
+      <button class="danger" onclick="clearNotificationsDB()"><i class="fas fa-trash-alt"></i> حذف جميع الإشعارات</button>
     </div>
     <div id="notif" class="list"></div>
   </div>
@@ -102,7 +712,7 @@ thead th{background:#0c1424}
   <!-- خريطة + أدوات + سجل المسار فوق الخريطة -->
   <div class="card">
     <div class="row" style="justify-content:space-between;align-items:center">
-      <h3>الخريطة الحيّة <span class="badge">Realtime + كل 10 ثوان</span></h3>
+      <h3><i class="fas fa-map-marked-alt"></i> الخريطة الحيّة <span class="badge">Realtime + كل 10 ثوان</span></h3>
       <div class="row">
         <label style="min-width:220px">فلتر الخريطة:
           <select id="map_bus">
@@ -113,18 +723,51 @@ thead th{background:#0c1424}
           <input type="checkbox" id="toggle_students" onchange="drawLive()" />
           <span>إظهار نقاط الطلاب</span>
         </label>
-        <button onclick="refreshMap()">عرض</button>
-        <button class="ghost" onclick="drawLive()">تحديث الخريطة</button>
+        <button onclick="refreshMap()"><i class="fas fa-eye"></i> عرض</button>
+        <button class="ghost" onclick="drawLive()"><i class="fas fa-sync-alt"></i> تحديث الخريطة</button>
       </div>
     </div>
 
-    <!-- سجل المسار التاريخي (موجود فوق الخريطة) -->
-    <div class="card" style="background:#0c1424;border-color:#223046;margin:8px 0 12px;border-radius:14px;">
-      <h3>سجل المسار التاريخي</h3>
+    <!-- سجل المسار التاريخي (تحديد التاريخ أعلى الخريطة) -->
+    <div class="historical-header">
+      <h3 style="margin:0;border:none"><i class="fas fa-history"></i> سجل المسار التاريخي</h3>
       <div class="row">
         <label>الباص: <select id="h_bus"></select></label>
         <label>من: <input id="h_from" type="datetime-local"/></label>
         <label>إلى: <input id="h_to" type="datetime-local"/></label>
+        <button onclick="loadHistorical()"><i class="fas fa-eye"></i> عرض المسار</button>
+        <button class="ghost" onclick="showCurrentLocation()"><i class="fas fa-map-marker-alt"></i> الموقع الحالي فقط</button>
+      </div>
+    </div>
+
+    <div id="map"></div>
+
+    <!-- أزرار التحكم أسفل الخريطة مباشرة -->
+    <div class="historical-playback">
+      <div class="playback-controls">
+        <div class="playback-buttons">
+          <button class="ghost" onclick="togglePlayback()" id="playBtn" disabled><i class="fas fa-play"></i> تشغيل</button>
+          <button class="ghost" onclick="clearHistorical()"><i class="fas fa-trash"></i> مسح</button>
+        </div>
+        <div class="export-buttons">
+          <button class="ghost" onclick="exportGPX()" id="gpxBtn" disabled><i class="fas fa-download"></i> تصدير GPX</button>
+          <button class="ghost" onclick="exportCSV()" id="csvBtn" disabled><i class="fas fa-file-csv"></i> تصدير CSV</button>
+        </div>
+      </div>
+      
+      <div style="flex: 1; min-width: 200px;">
+        <div class="timeline">
+          <input id="timeline" type="range" min="0" max="100" step="1" value="0"/>
+          <div class="labels">
+            <div id="tl_from">—</div>
+            <div id="tl_now">—</div>
+            <div id="tl_to">—</div>
+          </div>
+        </div>
+        <div class="small">اسحب الشريط للتقديم/التأخير، أو استخدم تشغيل/إيقاف</div>
+      </div>
+      
+      <div style="min-width: 180px;">
         <label>السرعة/الخطوة:
           <select id="speedSel">
             <option value="10">10 ثوانٍ</option>
@@ -134,32 +777,14 @@ thead th{background:#0c1424}
           </select>
         </label>
       </div>
-      <div class="row">
-        <button onclick="loadHistorical()">عرض المسار</button>
-        <button class="ghost" onclick="togglePlayback()" id="playBtn" disabled>▶ تشغيل</button>
-        <button class="ghost" onclick="clearHistorical()">مسح</button>
-        <button class="ghost" onclick="exportGPX()" id="gpxBtn" disabled>تصدير GPX</button>
-        <button class="ghost" onclick="exportCSV()" id="csvBtn" disabled>تصدير CSV</button>
-      </div>
-      <div class="timeline">
-        <input id="timeline" type="range" min="0" max="100" step="1" value="0"/>
-        <div class="labels">
-          <div id="tl_from">—</div>
-          <div id="tl_now">—</div>
-          <div id="tl_to">—</div>
-        </div>
-      </div>
-      <div class="small">اسحب الشريط للتقديم/التأخير، أو استخدم تشغيل/إيقاف مع سرعة القفز المحددة.</div>
     </div>
-
-    <div id="map"></div>
   </div>
 </div>
 
 <!-- تقرير الحضور -->
 <div class="container single">
   <div class="card">
-    <h3>تقرير الحضور</h3>
+    <h3><i class="fas fa-chart-bar"></i> تقرير الحضور</h3>
     <div class="row">
       <label>اختر الباص:
         <select id="r_bus"></select>
@@ -173,9 +798,9 @@ thead th{background:#0c1424}
       <label>التاريخ:
         <input id="r_date" type="date"/>
       </label>
-      <button onclick="buildReport()">تحديث التقرير</button>
-      <button onclick="printReport()" class="pill" style="background:#0c1424">طباعة</button>
-      <button onclick="downloadCSV()" class="pill" style="background:#0c1424">تنزيل CSV</button>
+      <button onclick="buildReport()"><i class="fas fa-sync-alt"></i> تحديث التقرير</button>
+      <button onclick="printReport()" class="pill" style="background:var(--glass)"><i class="fas fa-print"></i> طباعة</button>
+      <button onclick="downloadCSV()" class="pill" style="background:var(--glass)"><i class="fas fa-download"></i> تنزيل CSV</button>
     </div>
     <hr/>
     <div class="grid-3">
@@ -215,6 +840,19 @@ thead th{background:#0c1424}
   </div>
 </div>
 
+<!-- نافذة التعديل -->
+<div id="editModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modalTitle">تعديل البيانات</h3>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div id="modalBody">
+      <!-- محتوى النافذة سيتم تعبئته ديناميكياً -->
+    </div>
+  </div>
+</div>
+
 <script>
 /* ===== Supabase ===== */
 const SUPABASE_URL = "https://vdolempilbsofmriaohf.supabase.co";
@@ -243,13 +881,23 @@ async function createBus(){
   if(!bus_no||!plate) return alert('أدخل رقم الباص واللوحة');
   const { error } = await client.from('buses').insert({ school_bus_no: bus_no, plate_no: plate, capacity: cap });
   if(error) return alert(error.message);
-  alert('تمت إضافة الباص'); loadOptions();
+  alert('تمت إضافة الباص'); 
+  loadOptions();
+  loadBusesList();
+  // تفريغ الحقول
+  document.getElementById('bus_no').value = '';
+  document.getElementById('plate_no').value = '';
+  document.getElementById('capacity').value = '';
 }
 async function createObserver(){
   const name=v('obs_name'); if(!name) return alert('أدخل اسم الملاحظ');
   const { error } = await client.from('profiles').insert({ full_name: name, role: 'observer' });
   if(error) return alert(error.message);
-  alert('تمت إضافة الملاحظ'); loadOptions();
+  alert('تمت إضافة الملاحظ'); 
+  loadOptions();
+  loadObserversList();
+  // تفريغ الحقول
+  document.getElementById('obs_name').value = '';
 }
 async function assignBus(){
   const bus_id=+q('#bus_select').value, obs_id=q('#observer_select').value;
@@ -257,6 +905,7 @@ async function assignBus(){
   const { error } = await client.from('buses').update({ observer_id: obs_id }).eq('id', bus_id);
   if(error) return alert(error.message);
   alert('تم الربط');
+  loadBusesList();
 }
 async function createStudent(){
   const full_name=v('stu_name'), grade=v('stu_grade'), section=v('stu_section');
@@ -267,7 +916,14 @@ async function createStudent(){
     home_lng: (typeof p.lng==='number' && !isNaN(p.lng)) ? p.lng : null
   });
   if(error) return alert(error.message);
-  alert('تمت إضافة الطالب'); loadOptions();
+  alert('تمت إضافة الطالب'); 
+  loadOptions();
+  loadStudentsList();
+  // تفريغ الحقول
+  document.getElementById('stu_name').value = '';
+  document.getElementById('stu_grade').value = '';
+  document.getElementById('stu_section').value = '';
+  document.getElementById('home_point').value = '';
 }
 async function linkStudent(){
   const student_id=+q('#stu_select').value, bus_id=+q('#bus_select2').value;
@@ -275,6 +931,7 @@ async function linkStudent(){
   const { error } = await client.from('student_bus').upsert({ student_id, bus_id });
   if(error) return alert(error.message);
   alert('تم تخصيص الطالب للباص');
+  loadStudentsList();
 }
 
 let busMeta=new Map();
@@ -295,22 +952,253 @@ async function loadOptions(){
   busMeta.clear(); (buses||[]).forEach(b=>busMeta.set(b.id,{no:b.school_bus_no, plate:b.plate_no, observer_id:b.observer_id}));
 }
 
+/* ===== إدارة القوائم ===== */
+async function loadBusesList(){
+  const { data: buses } = await client.from('buses').select('id, school_bus_no, plate_no, capacity, observer_id').order('school_bus_no');
+  const { data: obs } = await client.from('profiles').select('id, full_name').eq('role','observer');
+  
+  const obsMap = new Map();
+  (obs||[]).forEach(o => obsMap.set(o.id, o.full_name));
+  
+  q('#buses_list').innerHTML = (buses||[]).map(b=>`
+    <div class="management-item">
+      <div class="item-info">
+        <div><b>${b.school_bus_no}</b> - ${b.plate_no}</div>
+        <div class="small">${b.capacity ? `السعة: ${b.capacity}` : ''} ${b.observer_id ? ` | الملاحظ: ${obsMap.get(b.observer_id) || 'غير معين'}` : ''}</div>
+      </div>
+      <div class="item-actions">
+        <button class="warning" onclick="editBus(${b.id})"><i class="fas fa-edit"></i> تعديل</button>
+        <button class="danger" onclick="deleteBus(${b.id})"><i class="fas fa-trash"></i> حذف</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function loadObserversList(){
+  const { data: obs } = await client.from('profiles').select('id, full_name').eq('role','observer').order('full_name');
+  
+  q('#observers_list').innerHTML = (obs||[]).map(o=>`
+    <div class="management-item">
+      <div class="item-info">
+        <div><b>${o.full_name}</b></div>
+        <div class="small">ملاحظ</div>
+      </div>
+      <div class="item-actions">
+        <button class="warning" onclick="editObserver(${o.id})"><i class="fas fa-edit"></i> تعديل</button>
+        <button class="danger" onclick="deleteObserver(${o.id})"><i class="fas fa-trash"></i> حذف</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function loadStudentsList(){
+  const { data: stus } = await client.from('students').select('id, full_name, grade, section, home_lat, home_lng').order('full_name');
+  
+  q('#students_list').innerHTML = (stus||[]).map(s=>`
+    <div class="management-item">
+      <div class="item-info">
+        <div><b>${s.full_name}</b></div>
+        <div class="small">${s.grade || ''} ${s.section ? `- ${s.section}` : ''} ${s.home_lat ? ' | لديه موقع منزلي' : ''}</div>
+      </div>
+      <div class="item-actions">
+        <button class="warning" onclick="editStudent(${s.id})"><i class="fas fa-edit"></i> تعديل</button>
+        <button class="danger" onclick="deleteStudent(${s.id})"><i class="fas fa-trash"></i> حذف</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ===== تعديل وحذف الباصات ===== */
+async function editBus(id){
+  const { data: bus } = await client.from('buses').select('*').eq('id', id).single();
+  if(!bus) return alert('لم يتم العثور على الباص');
+  
+  document.getElementById('modalTitle').textContent = 'تعديل الباص';
+  document.getElementById('modalBody').innerHTML = `
+    <input id="edit_bus_no" value="${bus.school_bus_no}" placeholder="رقم الباص بالمدرسة"/>
+    <input id="edit_plate_no" value="${bus.plate_no}" placeholder="رقم اللوحة"/>
+    <input id="edit_capacity" type="number" value="${bus.capacity || ''}" placeholder="السعة (اختياري)"/>
+    <button onclick="updateBus(${id})"><i class="fas fa-save"></i> حفظ التعديلات</button>
+  `;
+  document.getElementById('editModal').style.display = 'flex';
+}
+
+async function updateBus(id){
+  const bus_no = document.getElementById('edit_bus_no').value.trim();
+  const plate_no = document.getElementById('edit_plate_no').value.trim();
+  const capacity = document.getElementById('edit_capacity').value;
+  
+  if(!bus_no || !plate_no) return alert('أدخل رقم الباص واللوحة');
+  
+  const { error } = await client.from('buses')
+    .update({ 
+      school_bus_no: bus_no, 
+      plate_no: plate_no, 
+      capacity: capacity ? parseInt(capacity) : null 
+    })
+    .eq('id', id);
+    
+  if(error) return alert(error.message);
+  
+  alert('تم تحديث الباص');
+  closeModal();
+  loadOptions();
+  loadBusesList();
+}
+
+async function deleteBus(id){
+  if(!confirm('هل أنت متأكد من حذف هذا الباص؟')) return;
+  
+  const { error } = await client.from('buses').delete().eq('id', id);
+  if(error) return alert(error.message);
+  
+  alert('تم حذف الباص');
+  loadOptions();
+  loadBusesList();
+}
+
+/* ===== تعديل وحذف الملاحظين ===== */
+async function editObserver(id){
+  const { data: obs } = await client.from('profiles').select('*').eq('id', id).single();
+  if(!obs) return alert('لم يتم العثور على الملاحظ');
+  
+  document.getElementById('modalTitle').textContent = 'تعديل الملاحظ';
+  document.getElementById('modalBody').innerHTML = `
+    <input id="edit_obs_name" value="${obs.full_name}" placeholder="اسم الملاحظ"/>
+    <button onclick="updateObserver(${id})"><i class="fas fa-save"></i> حفظ التعديلات</button>
+  `;
+  document.getElementById('editModal').style.display = 'flex';
+}
+
+async function updateObserver(id){
+  const name = document.getElementById('edit_obs_name').value.trim();
+  if(!name) return alert('أدخل اسم الملاحظ');
+  
+  const { error } = await client.from('profiles')
+    .update({ full_name: name })
+    .eq('id', id);
+    
+  if(error) return alert(error.message);
+  
+  alert('تم تحديث الملاحظ');
+  closeModal();
+  loadOptions();
+  loadObserversList();
+}
+
+async function deleteObserver(id){
+  if(!confirm('هل أنت متأكد من حذف هذا الملاحظ؟')) return;
+  
+  const { error } = await client.from('profiles').delete().eq('id', id);
+  if(error) return alert(error.message);
+  
+  alert('تم حذف الملاحظ');
+  loadOptions();
+  loadObserversList();
+}
+
+/* ===== تعديل وحذف الطلاب ===== */
+async function editStudent(id){
+  const { data: student } = await client.from('students').select('*').eq('id', id).single();
+  if(!student) return alert('لم يتم العثور على الطالب');
+  
+  const homePoint = student.home_lat && student.home_lng ? 
+    `${student.home_lat},${student.home_lng}` : '';
+  
+  document.getElementById('modalTitle').textContent = 'تعديل الطالب';
+  document.getElementById('modalBody').innerHTML = `
+    <input id="edit_stu_name" value="${student.full_name}" placeholder="اسم الطالب"/>
+    <div class="row">
+      <input id="edit_stu_grade" value="${student.grade || ''}" placeholder="الصف"/>
+      <input id="edit_stu_section" value="${student.section || ''}" placeholder="الشعبة"/>
+    </div>
+    <input id="edit_home_point" value="${homePoint}" placeholder="إحداثي المنزل"/>
+    <div class="hint">نقبل lat,lng أو رابط فيه @lat,lng أو ?q=lat,lng</div>
+    <button onclick="updateStudent(${id})"><i class="fas fa-save"></i> حفظ التعديلات</button>
+  `;
+  document.getElementById('editModal').style.display = 'flex';
+}
+
+async function updateStudent(id){
+  const full_name = document.getElementById('edit_stu_name').value.trim();
+  const grade = document.getElementById('edit_stu_grade').value.trim();
+  const section = document.getElementById('edit_stu_section').value.trim();
+  const p = parsePoint(document.getElementById('edit_home_point').value.trim());
+  
+  if(!full_name) return alert('أدخل اسم الطالب');
+  
+  const { error } = await client.from('students')
+    .update({ 
+      full_name, 
+      grade, 
+      section,
+      home_lat: (typeof p.lat==='number' && !isNaN(p.lat)) ? p.lat : null,
+      home_lng: (typeof p.lng==='number' && !isNaN(p.lng)) ? p.lng : null
+    })
+    .eq('id', id);
+    
+  if(error) return alert(error.message);
+  
+  alert('تم تحديث الطالب');
+  closeModal();
+  loadOptions();
+  loadStudentsList();
+}
+
+async function deleteStudent(id){
+  if(!confirm('هل أنت متأكد من حذف هذا الطالب؟')) return;
+  
+  const { error } = await client.from('students').delete().eq('id', id);
+  if(error) return alert(error.message);
+  
+  alert('تم حذف الطالب');
+  loadOptions();
+  loadStudentsList();
+}
+
+/* ===== نافذة التعديل ===== */
+function closeModal(){
+  document.getElementById('editModal').style.display = 'none';
+}
+
+// إغلاق النافذة عند النقر خارجها
+window.onclick = function(event) {
+  const modal = document.getElementById('editModal');
+  if (event.target === modal) {
+    closeModal();
+  }
+}
+
 /* ===== إشعارات ===== */
 async function loadNotifications(){
   const { data: ntf } = await client.from('notifications').select('*').order('created_at',{ascending:false}).limit(60);
   q('#notif').innerHTML = (ntf||[]).map(n=>`
     <div class="notif">
-      <div><b>${n.title}</b></div>
-      <div style="opacity:.85">${n.body||''}</div>
-      <div class="pill">${new Date(n.created_at).toLocaleString()}</div>
-    </div>`).join('');
+      <div class="notif-content">
+        <div><b>${n.title}</b></div>
+        <div style="opacity:.85">${n.body||''}</div>
+        <div class="pill">${new Date(n.created_at).toLocaleString()}</div>
+      </div>
+      <button class="danger" onclick="deleteNotification(${n.id})" style="width:auto;padding:6px 10px;"><i class="fas fa-trash"></i></button>
+    </div>
+  `).join('');
 }
-function clearNotificationsUI(){ q('#notif').innerHTML = ''; }
+
+async function deleteNotification(id){
+  if(!confirm('هل تريد حذف هذا الإشعار؟')) return;
+  
+  const { error } = await client.from('notifications').delete().eq('id', id);
+  if(error){ alert(error.message); return; }
+  
+  loadNotifications();
+}
+
 async function clearNotificationsDB(){
   if(!confirm('سيتم حذف كل الإشعارات نهائيًا. متابعة؟')) return;
   const { error } = await client.from('notifications').delete().neq('id',0);
   if(error){ alert(error.message); return; }
-  clearNotificationsUI();
+  
+  loadNotifications();
   alert('تم حذف جميع الإشعارات من قاعدة البيانات نهائيًا.');
 }
 
@@ -318,6 +1206,21 @@ async function clearNotificationsDB(){
 let map, busMarkers=new Map(), polylines=new Map(), selectedBusId=null;
 let studentLayer = L.layerGroup();  // طبقة نقاط الطلاب
 let liveChannel = null;             // قناة Realtime
+
+// إنشاء أيقونات مخصصة
+const busIcon = L.divIcon({
+  html: '<i class="fas fa-bus"></i>',
+  className: 'bus-icon',
+  iconSize: [40, 40],
+  iconAnchor: [20, 20]
+});
+
+const studentIcon = L.divIcon({
+  html: '<i class="fas fa-user"></i>',
+  className: 'student-icon',
+  iconSize: [32, 32],
+  iconAnchor: [16, 16]
+});
 
 function initMap(){
   map = L.map('map').setView([25.285,51.531], 11);
@@ -355,9 +1258,9 @@ async function drawLive(){
         const latlngs = pts.map(p=>[p.lat,p.lng]);
         const last = latlngs[latlngs.length-1];
         const label = busMeta.get(bid)?.no ? `Bus ${busMeta.get(bid).no}` : `Bus #${bid}`;
-        const pl = L.polyline(latlngs,{weight:4,opacity:.9}).addTo(map);
+        const pl = L.polyline(latlngs,{weight:4,opacity:.9, color: '#3b82f6'}).addTo(map);
         polylines.set(bid,pl);
-        const mk = L.marker(last).addTo(map).bindTooltip(label).openTooltip();
+        const mk = L.marker(last, {icon: busIcon}).addTo(map).bindTooltip(label).openTooltip();
         busMarkers.set(bid,mk);
       });
       if(selectedBusId && byBus.has(selectedBusId)){
@@ -378,7 +1281,7 @@ async function drawLive(){
         }
         latestPerBus.forEach(t=>{
           const label = busMeta.get(t.bus_id)?.no ? `Bus ${busMeta.get(t.bus_id).no}` : `Bus #${t.bus_id}`;
-          const mk = L.marker([t.lat,t.lng]).addTo(map).bindTooltip(label+' (آخر موقع)').openTooltip();
+          const mk = L.marker([t.lat,t.lng], {icon: busIcon}).addTo(map).bindTooltip(label+' (آخر موقع)').openTooltip();
           busMarkers.set(t.bus_id, mk);
         });
         if(selectedBusId && latestPerBus.length){ map.setView([latestPerBus[0].lat, latestPerBus[0].lng], 13); }
@@ -400,7 +1303,7 @@ async function drawStudentPoints(){
   (data||[]).map(r=>({bus_id:r.bus_id, ...r.students}))
     .filter(s=>s && typeof s.home_lat==='number' && typeof s.home_lng==='number')
     .forEach(s=>{
-      const m = L.circleMarker([s.home_lat, s.home_lng], { radius:6, opacity:0.9 })
+      const m = L.marker([s.home_lat, s.home_lng], {icon: studentIcon})
         .bindTooltip(`👤 ${s.full_name}`, {direction:'top'})
         .on('click', ()=> window.open(`https://www.google.com/maps/?q=${s.home_lat},${s.home_lng}`, '_blank'));
       studentLayer.addLayer(m);
@@ -415,9 +1318,9 @@ function subscribeRealtime(){
     .on('postgres_changes', { event:'INSERT', schema:'public', table:'gps_tracks', filter }, (payload) => {
       const row = payload.new; const bid = row.bus_id; const ll=[row.lat,row.lng];
       if(selectedBusId && bid!==selectedBusId) return;
-      let pl = polylines.get(bid); if(pl){ pl.addLatLng(ll); } else { pl = L.polyline([ll],{weight:4,opacity:.9}).addTo(map); polylines.set(bid,pl); }
+      let pl = polylines.get(bid); if(pl){ pl.addLatLng(ll); } else { pl = L.polyline([ll],{weight:4,opacity:.9, color: '#3b82f6'}).addTo(map); polylines.set(bid,pl); }
       const label = busMeta.get(bid)?.no ? `Bus ${busMeta.get(bid).no}` : `Bus #${bid}`;
-      let mk = busMarkers.get(bid); if(mk){ mk.setLatLng(ll); } else { mk = L.marker(ll).addTo(map).bindTooltip(label).openTooltip(); busMarkers.set(bid,mk); }
+      let mk = busMarkers.get(bid); if(mk){ mk.setLatLng(ll); } else { mk = L.marker(ll, {icon: busIcon}).addTo(map).bindTooltip(label).openTooltip(); busMarkers.set(bid,mk); }
     })
     .subscribe();
 }
@@ -471,19 +1374,47 @@ function drawRunnerAt(timeMs){
   const idx = findLastPointIdxAt(timeMs);
   if(idx<0){
     const p0=histPoints[0];
-    if(!runnerMarker) runnerMarker=L.marker([p0.lat,p0.lng]).addTo(histLayer);
+    if(!runnerMarker) runnerMarker=L.marker([p0.lat,p0.lng], {icon: busIcon}).addTo(histLayer);
     else runnerMarker.setLatLng([p0.lat,p0.lng]);
     if(histPolyline) histPolyline.setLatLngs([]);
     runnerMarker.bindTooltip(msToLabel(timeMs)).openTooltip();
     return;
   }
   const pts = histPoints.slice(0, idx+1).map(p=>[p.lat,p.lng]);
-  if(!runnerMarker) runnerMarker=L.marker(pts[idx]).addTo(histLayer);
+  if(!runnerMarker) runnerMarker=L.marker(pts[idx], {icon: busIcon}).addTo(histLayer);
   else runnerMarker.setLatLng(pts[idx]);
-  if(!histPolyline) histPolyline=L.polyline(pts,{weight:5,opacity:.9}).addTo(histLayer);
+  if(!histPolyline) histPolyline=L.polyline(pts,{weight:5,opacity:.9, color: '#3b82f6'}).addTo(histLayer);
   else histPolyline.setLatLngs(pts);
   runnerMarker.bindTooltip(msToLabel(timeMs)).openTooltip();
 }
+
+async function showCurrentLocation(){
+  const busId = +q('#h_bus').value || null;
+  if(!busId) return alert('اختر الباص');
+  
+  ensureHistLayer();
+  clearHistorical(); // امسح السابق
+  
+  // جلب آخر موقع للباص
+  const { data, error } = await client.from('gps_tracks')
+    .select('lat,lng,recorded_at')
+    .eq('bus_id', busId)
+    .order('recorded_at',{ascending:false})
+    .limit(1);
+    
+  if(error){ alert(error.message); return; }
+  if(!data?.length){ alert('لا توجد بيانات موقع لهذا الباص.'); return; }
+  
+  const point = data[0];
+  const marker = L.marker([point.lat, point.lng], {icon: busIcon})
+    .addTo(histLayer)
+    .bindTooltip(`الموقع الحالي: ${new Date(point.recorded_at).toLocaleString()}`)
+    .openTooltip();
+    
+  map.setView([point.lat, point.lng], 13);
+  alert('تم عرض الموقع الحالي للباص');
+}
+
 async function loadHistorical(){
   const busId = +q('#h_bus').value || null;
   const from = q('#h_from').value; const to = q('#h_to').value;
@@ -509,8 +1440,8 @@ async function loadHistorical(){
   histNow  = histFrom;
 
   // علامات البداية والنهاية
-  histStartMarker = L.marker([histPoints[0].lat,histPoints[0].lng]).addTo(histLayer).bindTooltip('بداية: '+histPoints[0].ts.toLocaleString());
-  histEndMarker   = L.marker([histPoints.at(-1).lat,histPoints.at(-1).lng]).addTo(histLayer).bindTooltip('نهاية: '+histPoints.at(-1).ts.toLocaleString());
+  histStartMarker = L.marker([histPoints[0].lat,histPoints[0].lng], {icon: busIcon}).addTo(histLayer).bindTooltip('بداية: '+histPoints[0].ts.toLocaleString());
+  histEndMarker   = L.marker([histPoints.at(-1).lat,histPoints.at(-1).lng], {icon: busIcon}).addTo(histLayer).bindTooltip('نهاية: '+histPoints.at(-1).ts.toLocaleString());
 
   setTimelineBounds();
   drawRunnerAt(histNow);
@@ -518,7 +1449,7 @@ async function loadHistorical(){
 
   // فعّل الأزرار
   q('#playBtn').disabled=false; q('#gpxBtn').disabled=false; q('#csvBtn').disabled=false;
-  q('#playBtn').textContent='▶ تشغيل';
+  q('#playBtn').innerHTML = '<i class="fas fa-play"></i> تشغيل';
 }
 function clearHistorical(){
   if(histTimer){ clearInterval(histTimer); histTimer=null; }
@@ -541,17 +1472,17 @@ function togglePlayback(){
   const tl = q('#timeline');
 
   if(histTimer){ // إيقاف
-    clearInterval(histTimer); histTimer=null; q('#playBtn').textContent='▶ تشغيل'; return;
+    clearInterval(histTimer); histTimer=null; q('#playBtn').innerHTML = '<i class="fas fa-play"></i> تشغيل'; return;
   }
   // تشغيل: نقفز بقيمة stepSeconds في الزمن كل 200ms (سلاسة عالية)
-  q('#playBtn').textContent='⏸ إيقاف مؤقت';
+  q('#playBtn').innerHTML = '<i class="fas fa-pause"></i> إيقاف مؤقت';
   histTimer = setInterval(()=>{
     histNow = Math.min(histNow + Math.max(1,stepSeconds)*1000, histTo);
     tl.value = String(histNow);
     drawRunnerAt(histNow);
     updateTimelineLabels();
     if(histNow>=histTo){
-      clearInterval(histTimer); histTimer=null; q('#playBtn').textContent='▶ تشغيل';
+      clearInterval(histTimer); histTimer=null; q('#playBtn').innerHTML = '<i class="fas fa-play"></i> تشغيل';
     }
   }, 200);
 }
@@ -656,6 +1587,33 @@ function downloadCSV(){
   // ربط تحكم السرعة والسحب
   q('#speedSel').addEventListener('change', setStepFromSelect);
   q('#timeline').addEventListener('input', onScrub);
+  
+  // إضافة التحكم بالتبويبات
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      // إزالة النشاط من جميع التبويبات
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      // إخفاء جميع الأقسام
+      document.querySelectorAll('.management-section').forEach(s => s.classList.remove('active'));
+      
+      // تفعيل التبويب المختار
+      tab.classList.add('active');
+      // إظهار القسم المطلوب
+      const tabId = tab.getAttribute('data-tab');
+      document.getElementById(tabId).classList.add('active');
+      
+      // تحميل القوائم المناسبة
+      if(tabId === 'bus-management') loadBusesList();
+      else if(tabId === 'observer-management') loadObserversList();
+      else if(tabId === 'student-management') loadStudentsList();
+    });
+  });
+  
+  // تحميل القوائم الأولية
+  loadBusesList();
+  loadObserversList();
+  loadStudentsList();
 })();
 </script>
-</body></html>
+</body>
+</html>
