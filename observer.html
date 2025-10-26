@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="ar" dir="rtl">
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
@@ -8,44 +9,364 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
-:root{--bg:#0b1222;--card:#0f172a;--ink:#e7edf6;--muted:#9fb0c8;--line:#203049;--pri:#22c55e;--sec:#38bdf8;--danger:#ef4444;--warn:#f59e0b}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:"Tajawal",system-ui}
-header{position:sticky;top:0;z-index:10;background:#0c1528;border-bottom:1px solid var(--line);padding:12px}
-h3{margin:12px 0}
-.container{padding:12px;max-width:760px;margin:0 auto}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;margin-bottom:12px}
-.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.btn{width:100%;padding:12px;border-radius:12px;border:1px solid #274062;background:#12203a;color:var(--ink);font-weight:700}
-.btn.pri{background:linear-gradient(135deg,var(--pri),var(--sec));border:none}
-.btn.danger{background:var(--danger);border:none}
-.btn.warn{background:var(--warn);border:none;color:#111827}
-.btn.ghost{background:#0f1a33;border:1px solid #22324b}
-.btn:disabled{opacity:.45}
-select,input{width:100%;padding:12px;border-radius:12px;border:1px solid #274062;background:#0f1a33;color:var(--ink)}
-.badge{display:inline-block;padding:2px 8px;border:1px solid #2a3a51;border-radius:999px;font-size:12px}
-.section-title{display:flex;justify-content:space-between;align-items:center}
-.list{display:grid;gap:8px}
-.item{display:grid;grid-template-columns:1fr 120px 110px; gap:6px; align-items:center}
-@media (max-width:520px){ .item{grid-template-columns:1fr 1fr 1fr} }
-.name{font-weight:700}
-.pill{padding:3px 8px;border-radius:999px;border:1px solid #29405c;font-size:12px;color:var(--muted)}
-.tabbar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
-.tabbar button{padding:10px;border-radius:999px;border:1px solid #254161;background:#0f1a33;color:var(--ink)}
-.tabbar button.active{background:linear-gradient(135deg,var(--sec),#5eead4);border:none;color:#0a1020;font-weight:800}
-footer{padding:10px;text-align:center;color:var(--muted);font-size:12px}
-.kicker{font-size:12px;color:var(--muted)}
-hr{border:none;border-top:1px dashed #23324b;margin:10px 0}
-#omap{height:300px;border-radius:14px;border:1px solid #223046}
+:root {
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --ink: #1e293b;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --pri: #10b981;
+  --sec: #0ea5e9;
+  --danger: #ef4444;
+  --warn: #f59e0b;
+  --glass: rgba(255, 255, 255, 0.7);
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: linear-gradient(135deg, #f0f4f8, #e2e8f0);
+  color: var(--ink);
+  font-family: "Tajawal", system-ui;
+  line-height: 1.6;
+}
+
+header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+header .row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+h3 {
+  margin: 12px 0;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.container {
+  padding: 16px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-2px);
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.btn {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  font-weight: 700;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.btn.pri {
+  background: linear-gradient(135deg, var(--pri), var(--sec));
+  border: none;
+  color: white;
+}
+
+.btn.pri:hover {
+  box-shadow: 0 6px 20px rgba(14, 165, 233, 0.3);
+}
+
+.btn.danger {
+  background: var(--danger);
+  border: none;
+  color: white;
+}
+
+.btn.danger:hover {
+  background: #dc2626;
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+}
+
+.btn.warn {
+  background: var(--warn);
+  border: none;
+  color: #111827;
+}
+
+.btn.warn:hover {
+  background: #d97706;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+}
+
+.btn.ghost {
+  background: var(--glass);
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.btn.ghost:hover {
+  background: var(--bg);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+select, input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+select:focus, input:focus {
+  outline: none;
+  border-color: var(--sec);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 12px;
+  background: var(--glass);
+  backdrop-filter: blur(5px);
+}
+
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.list {
+  display: grid;
+  gap: 10px;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 1fr 120px 110px;
+  gap: 8px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  transition: all 0.2s ease;
+}
+
+.item:hover {
+  background: var(--glass);
+}
+
+@media (max-width: 520px) {
+  .item {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+.name {
+  font-weight: 700;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--glass);
+}
+
+.tabbar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.tabbar button {
+  padding: 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.tabbar button.active {
+  background: linear-gradient(135deg, var(--sec), #5eead4);
+  border: none;
+  color: #0a1020;
+  font-weight: 800;
+}
+
+.tabbar button:hover:not(.active) {
+  background: var(--line);
+}
+
+footer {
+  padding: 16px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 20px;
+}
+
+.kicker {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+hr {
+  border: none;
+  border-top: 1px dashed var(--line);
+  margin: 12px 0;
+}
+
+#omap {
+  height: 300px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+/* أيقونات مخصصة للخريطة */
+.bus-icon {
+  background-color: #3b82f6;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+  width: 40px;
+  height: 40px;
+}
+
+.student-icon {
+  background-color: #10b981;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+  width: 32px;
+  height: 32px;
+}
+
+.observer-icon {
+  background-color: #f59e0b;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+  width: 36px;
+  height: 36px;
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 12px;
+  }
+  
+  .card {
+    padding: 12px;
+  }
+  
+  .item {
+    padding: 10px;
+  }
+}
 </style>
 </head>
 <body>
 <header>
-  <div class="row" style="justify-content:space-between">
-    <div>🚍 واجهة ملاحظ الباص</div>
-    <div class="badge" id="track_status">التتبّع: متوقف</div>
+  <div class="row">
+    <div><i class="fas fa-bus"></i> واجهة ملاحظ الباص</div>
+    <div class="badge" id="track_status"><i class="fas fa-satellite-dish"></i> التتبّع: متوقف</div>
   </div>
 </header>
 
@@ -53,14 +374,20 @@ hr{border:none;border-top:1px dashed #23324b;margin:10px 0}
   <!-- اختيار الفترة والباص -->
   <div class="card">
     <div class="tabbar">
-      <button id="tab_morning" class="active" onclick="setPeriod('morning')">الفترة الصباحية</button>
-      <button id="tab_evening" onclick="setPeriod('evening')">الفترة المسائية</button>
+      <button id="tab_morning" class="active" onclick="setPeriod('morning')">
+        <i class="fas fa-sun"></i> الفترة الصباحية
+      </button>
+      <button id="tab_evening" onclick="setPeriod('evening')">
+        <i class="fas fa-moon"></i> الفترة المسائية
+      </button>
     </div>
     <div class="row">
       <label style="flex:1">اختر الباص:
         <select id="bus_select"></select>
       </label>
-      <button class="btn pri" style="flex:0 0 120px" onclick="loadRoster()">عرض</button>
+      <button class="btn pri" style="flex:0 0 120px" onclick="loadRoster()">
+        <i class="fas fa-eye"></i> عرض
+      </button>
     </div>
     <div class="kicker">اختر الباص ثم اضغط «عرض» لإظهار الطلاب على القوائم والخريطة.</div>
   </div>
@@ -68,61 +395,87 @@ hr{border:none;border-top:1px dashed #23324b;margin:10px 0}
   <!-- خريطة الطلاب + موقعي -->
   <div class="card">
     <div class="section-title">
-      <h3>الخريطة</h3>
-      <span class="pill">نقاط الطلاب + موقعي عند التتبع</span>
+      <h3><i class="fas fa-map-marked-alt"></i> الخريطة</h3>
+      <span class="pill"><i class="fas fa-layer-group"></i> نقاط الطلاب + موقعي عند التتبع</span>
     </div>
     <div id="omap"></div>
     <div class="row">
-      <button class="btn ghost" onclick="fitAll()">ملائمة جميع النقاط</button>
+      <button class="btn ghost" onclick="fitAll()">
+        <i class="fas fa-expand-alt"></i> ملائمة جميع النقاط
+      </button>
     </div>
   </div>
 
   <!-- تتبع GPS -->
   <div class="card">
     <div class="section-title">
-      <h3>تتبّع الموقع (GPS)</h3>
-      <span class="pill">يُرسل كل ~10 ثوانٍ لصفحة المشرف</span>
+      <h3><i class="fas fa-satellite"></i> تتبّع الموقع (GPS)</h3>
+      <span class="pill"><i class="fas fa-clock"></i> يُرسل كل ~10 ثوانٍ لصفحة المشرف</span>
     </div>
     <div class="row">
-      <button id="btn_track" class="btn pri" onclick="toggleTracking(true)">تشغيل التتبّع</button>
-      <button id="btn_stop" class="btn ghost" onclick="toggleTracking(false)" disabled>إيقاف التتبّع</button>
+      <button id="btn_track" class="btn pri" onclick="toggleTracking(true)">
+        <i class="fas fa-play"></i> تشغيل التتبّع
+      </button>
+      <button id="btn_stop" class="btn ghost" onclick="toggleTracking(false)" disabled>
+        <i class="fas fa-stop"></i> إيقاف التتبّع
+      </button>
     </div>
-    <div id="gps_hint" class="kicker">تأكد من منح إذن الموقع للمتصفح.</div>
+    <div id="gps_hint" class="kicker"><i class="fas fa-info-circle"></i> تأكد من منح إذن الموقع للمتصفح.</div>
   </div>
 
   <!-- صباحي: الصعود -->
   <div class="card" id="blk_board_morning">
-    <div class="section-title"><h3>صباحًا – الصعود من المنازل</h3><span class="pill" id="sum_board_m">0/0</span></div>
+    <div class="section-title">
+      <h3><i class="fas fa-home"></i> صباحًا – الصعود من المنازل</h3>
+      <span class="pill" id="sum_board_m">0/0</span>
+    </div>
     <div id="list_board_m" class="list"></div>
     <div class="row">
-      <button class="btn pri" onclick="finishBoardMorning()">تم صعود الطلاب</button>
+      <button class="btn pri" onclick="finishBoardMorning()">
+        <i class="fas fa-check-circle"></i> تم صعود الطلاب
+      </button>
     </div>
   </div>
 
   <!-- صباحي: النزول للمدرسة -->
   <div class="card" id="blk_alight_morning">
-    <div class="section-title"><h3>صباحًا – النزول عند المدرسة</h3><span class="pill" id="sum_alight_m">0/0</span></div>
+    <div class="section-title">
+      <h3><i class="fas fa-school"></i> صباحًا – النزول عند المدرسة</h3>
+      <span class="pill" id="sum_alight_m">0/0</span>
+    </div>
     <div id="list_alight_m" class="list"></div>
     <div class="row">
-      <button class="btn pri" onclick="finishAlightMorning()">تم نزول جميع الطلاب للمدرسة</button>
+      <button class="btn pri" onclick="finishAlightMorning()">
+        <i class="fas fa-check-circle"></i> تم نزول جميع الطلاب للمدرسة
+      </button>
     </div>
   </div>
 
-  <!-- مسائي: الصعود من المدرسة (أُضيف زر "لم يصعد") -->
+  <!-- مسائي: الصعود من المدرسة -->
   <div class="card" id="blk_board_evening" style="display:none">
-    <div class="section-title"><h3>مساءً – الصعود من المدرسة</h3><span class="pill" id="sum_board_e">0/0</span></div>
+    <div class="section-title">
+      <h3><i class="fas fa-school"></i> مساءً – الصعود من المدرسة</h3>
+      <span class="pill" id="sum_board_e">0/0</span>
+    </div>
     <div id="list_board_e" class="list"></div>
     <div class="row">
-      <button class="btn pri" onclick="finishBoardEvening()">تم صعود جميع الطلاب</button>
+      <button class="btn pri" onclick="finishBoardEvening()">
+        <i class="fas fa-check-circle"></i> تم صعود جميع الطلاب
+      </button>
     </div>
   </div>
 
   <!-- مسائي: النزول إلى المنازل -->
   <div class="card" id="blk_alight_evening" style="display:none">
-    <div class="section-title"><h3>مساءً – النزول إلى المنازل</h3><span class="pill" id="sum_alight_e">0/0</span></div>
+    <div class="section-title">
+      <h3><i class="fas fa-home"></i> مساءً – النزول إلى المنازل</h3>
+      <span class="pill" id="sum_alight_e">0/0</span>
+    </div>
     <div id="list_alight_e" class="list"></div>
     <div class="row">
-      <button class="btn pri" onclick="finishAlightEvening()">نزل جميع الطلاب إلى منازلهم</button>
+      <button class="btn pri" onclick="finishAlightEvening()">
+        <i class="fas fa-check-circle"></i> نزل جميع الطلاب إلى منازلهم
+      </button>
     </div>
   </div>
 
@@ -138,7 +491,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 /* ===== حالة الصفحة ===== */
 let currentPeriod = localStorage.getItem('period') || 'morning';
 let currentBusId = Number(localStorage.getItem('bus_id')) || null;
-let observerId = null; // أربطه لاحقًا إن لديك جلسة مصادقة
+let observerId = null;
 
 // تخزين حالات الأزرار لكل يوم/فترة/باص
 let state = JSON.parse(localStorage.getItem('obs_state')||'{}');
@@ -148,61 +501,119 @@ function scoped(){ const k=keyScope(); state[k]=state[k]||{board:{},alight:{}}; 
 
 /* ===== خريطة الملاحظ ===== */
 let omap, stuLayer = L.layerGroup(), myMarker=null;
+
+// إنشاء أيقونات مخصصة
+const studentIcon = L.divIcon({
+  html: '<i class="fas fa-user"></i>',
+  className: 'student-icon',
+  iconSize: [32, 32],
+  iconAnchor: [16, 16]
+});
+
+const observerIcon = L.divIcon({
+  html: '<i class="fas fa-user-tie"></i>',
+  className: 'observer-icon',
+  iconSize: [36, 36],
+  iconAnchor: [18, 18]
+});
+
 function initOMap(){
   omap = L.map('omap').setView([25.285,51.531], 12);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19, attribution:'&copy; OpenStreetMap'}).addTo(omap);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    maxZoom:19, 
+    attribution:'&copy; OpenStreetMap'
+  }).addTo(omap);
   stuLayer.addTo(omap);
 }
+
 function fitAll(){
   const group = new L.FeatureGroup();
   stuLayer.eachLayer(l=>group.addLayer(l));
   if(myMarker) group.addLayer(myMarker);
-  if(group.getLayers().length){ omap.fitBounds(group.getBounds(),{padding:[20,20]}); }
+  if(group.getLayers().length){ 
+    omap.fitBounds(group.getBounds(),{padding:[20,20]}); 
+  }
 }
 
 /* رسم نقاط الطلاب */
 async function drawStudentPointsOnMap(){
   stuLayer.clearLayers();
   if(!currentBusId) return;
-  const { data, error } = await sb.from('student_bus').select('students(full_name, home_lat, home_lng)').eq('bus_id', currentBusId);
+  
+  const { data, error } = await sb.from('student_bus')
+    .select('students(full_name, home_lat, home_lng)')
+    .eq('bus_id', currentBusId);
+  
   if(error) return;
-  const studs = (data||[]).map(r=>r.students).filter(s=>s && typeof s.home_lat==='number' && typeof s.home_lng==='number');
+  
+  const studs = (data||[]).map(r=>r.students)
+    .filter(s=>s && typeof s.home_lat==='number' && typeof s.home_lng==='number');
+  
   studs.forEach(s=>{
-    const m = L.circleMarker([s.home_lat, s.home_lng], { radius:7, opacity:0.95 })
-      .bindPopup(`<b>${s.full_name}</b><br/>
-        <a target="_blank" href="https://www.google.com/maps?q=${s.home_lat},${s.home_lng}">فتح في Google Maps</a>`);
+    const m = L.marker([s.home_lat, s.home_lng], {icon: studentIcon})
+      .bindPopup(`
+        <div style="text-align:right; min-width:180px">
+          <b>${s.full_name}</b><br/>
+          <a target="_blank" href="https://www.google.com/maps?q=${s.home_lat},${s.home_lng}">
+            <i class="fas fa-external-link-alt"></i> فتح في Google Maps
+          </a>
+        </div>
+      `);
     stuLayer.addLayer(m);
   });
+  
   fitAll();
 }
 
 /* ===== تحميل القوائم ===== */
 async function loadBuses(){
-  const { data } = await sb.from('buses').select('id, school_bus_no').order('school_bus_no');
+  const { data } = await sb.from('buses')
+    .select('id, school_bus_no')
+    .order('school_bus_no');
+  
   const sel = document.getElementById('bus_select');
-  sel.innerHTML = (data||[]).map(b=>`<option value="${b.id}" ${b.id===currentBusId?'selected':''}>${b.school_bus_no}</option>`).join('');
-  if(!currentBusId && data?.length){ currentBusId=data[0].id; localStorage.setItem('bus_id', String(currentBusId)); }
+  sel.innerHTML = (data||[]).map(b=>
+    `<option value="${b.id}" ${b.id===currentBusId?'selected':''}>${b.school_bus_no}</option>`
+  ).join('');
+  
+  if(!currentBusId && data?.length){ 
+    currentBusId=data[0].id; 
+    localStorage.setItem('bus_id', String(currentBusId)); 
+  }
 }
 
 async function loadRoster(){
   const sel = document.getElementById('bus_select');
   currentBusId = Number(sel.value||'0')||null;
   localStorage.setItem('bus_id', String(currentBusId||''));
-  if(!currentBusId){ alert('اختر الباص أولًا.'); return; }
+  
+  if(!currentBusId){ 
+    alert('اختر الباص أولًا.'); 
+    return; 
+  }
 
   const { data, error } = await sb.from('student_bus')
     .select('students(id, full_name, home_lat, home_lng)')
     .eq('bus_id', currentBusId);
-  if(error){ alert(error.message); return; }
+    
+  if(error){ 
+    alert(error.message); 
+    return; 
+  }
 
-  const students = (data||[]).map(r=>r.students).filter(Boolean).sort((a,b)=>a.full_name.localeCompare(b.full_name,'ar'));
+  const students = (data||[]).map(r=>r.students)
+    .filter(Boolean)
+    .sort((a,b)=>a.full_name.localeCompare(b.full_name,'ar'));
+    
   renderLists(students);
   drawStudentPointsOnMap();
 }
 
 /* ===== واجهة التبويب ===== */
 function setPeriod(p){
-  currentPeriod = p; localStorage.setItem('period', p);
+  currentPeriod = p; 
+  localStorage.setItem('period', p);
+  
   document.getElementById('tab_morning').classList.toggle('active', p==='morning');
   document.getElementById('tab_evening').classList.toggle('active', p==='evening');
 
@@ -217,22 +628,44 @@ function setPeriod(p){
 /* ===== واجهة القوائم + الأزرار ===== */
 function renderLists(students){
   const S = scoped();
-  function sumToBadge(done,total,elId){ document.getElementById(elId).textContent = `${done}/${total}`; }
+  
+  function sumToBadge(done,total,elId){ 
+    document.getElementById(elId).textContent = `${done}/${total}`; 
+  }
 
-  const listBM = document.getElementById('list_board_m'); listBM.innerHTML='';
-  const listAM = document.getElementById('list_alight_m'); listAM.innerHTML='';
-  const listBE = document.getElementById('list_board_e'); listBE.innerHTML='';
-  const listAE = document.getElementById('list_alight_e'); listAE.innerHTML='';
+  const listBM = document.getElementById('list_board_m'); 
+  listBM.innerHTML='';
+  const listAM = document.getElementById('list_alight_m'); 
+  listAM.innerHTML='';
+  const listBE = document.getElementById('list_board_e'); 
+  listBE.innerHTML='';
+  const listAE = document.getElementById('list_alight_e'); 
+  listAE.innerHTML='';
+  
   const total = students.length;
 
   const makeRow = (stu, leftBtn, rightBtn) => {
-    const row = document.createElement('div'); row.className='item';
-    const nm = document.createElement('div'); nm.className='name'; nm.textContent = stu.full_name;
-    const b1 = document.createElement('button'); b1.className='btn ghost'; b1.textContent=leftBtn.label;
-    const b2 = document.createElement('button'); b2.className='btn ghost'; b2.textContent=rightBtn.label;
-    b1.onclick = leftBtn.onClick; b2.onclick = rightBtn.onClick;
+    const row = document.createElement('div'); 
+    row.className='item';
+    
+    const nm = document.createElement('div'); 
+    nm.className='name'; 
+    nm.textContent = stu.full_name;
+    
+    const b1 = document.createElement('button'); 
+    b1.className='btn ghost'; 
+    b1.textContent=leftBtn.label;
+    
+    const b2 = document.createElement('button'); 
+    b2.className='btn ghost'; 
+    b2.textContent=rightBtn.label;
+    
+    b1.onclick = leftBtn.onClick; 
+    b2.onclick = rightBtn.onClick;
+    
     if(leftBtn.kind==='danger') b1.classList.add('danger');
     if(rightBtn.kind==='pri') b2.classList.add('pri');
+    
     row.append(nm,b1,b2);
     return {row,b1,b2};
   };
@@ -240,13 +673,29 @@ function renderLists(students){
   /* صباحي – الصعود (صعود/غائب) */
   let doneBM=0;
   students.forEach(stu=>{
-    const status = S.board[stu.id]; if(status) doneBM++;
+    const status = S.board[stu.id]; 
+    if(status) doneBM++;
+    
     const {row,b1,b2} = makeRow(
       stu,
-      {label:'غائب',kind:'danger', onClick:()=>markBoard(stu,'absent','morning',b1,b2)},
-      {label:'صعود', kind:'pri',    onClick:()=>markBoard(stu,'board','morning',b1,b2)}
+      {
+        label: 'غائب', 
+        kind: 'danger', 
+        onClick: ()=>markBoard(stu,'absent','morning',b1,b2)
+      },
+      {
+        label: 'صعود', 
+        kind: 'pri', 
+        onClick: ()=>markBoard(stu,'board','morning',b1,b2)
+      }
     );
-    if(status){ b1.disabled = true; b2.disabled = true; b2.textContent = (status==='board'?'تم الصعود':'غائب'); }
+    
+    if(status){ 
+      b1.disabled = true; 
+      b2.disabled = true; 
+      b2.textContent = (status==='board'?'تم الصعود':'غائب'); 
+    }
+    
     listBM.appendChild(row);
   });
   sumToBadge(doneBM,total,'sum_board_m');
@@ -257,28 +706,57 @@ function renderLists(students){
     const boarded = S.board[stu.id]==='board';
     const al = S.alight[`${stu.id}_morning`]==='alight';
     if(al) doneAM++;
+    
     const {row,b1,b2} = makeRow(
       stu,
-      {label:'—', onClick:()=>{}, kind:''},
-      {label:'نزول', kind:'pri', onClick:()=>markAlight(stu,'morning',b2)}
+      {label: '—', onClick: ()=>{}, kind: ''},
+      {
+        label: 'نزول', 
+        kind: 'pri', 
+        onClick: ()=>markAlight(stu,'morning',b2)
+      }
     );
+    
     b1.style.visibility='hidden';
-    if(!boarded){ b2.disabled = true; b2.title='الطالب غائب صباحًا'; }
-    if(al){ b2.disabled = true; b2.textContent='نزل'; }
+    if(!boarded){ 
+      b2.disabled = true; 
+      b2.title='الطالب غائب صباحًا'; 
+    }
+    if(al){ 
+      b2.disabled = true; 
+      b2.textContent='نزل'; 
+    }
+    
     listAM.appendChild(row);
   });
   sumToBadge(doneAM,total,'sum_alight_m');
 
-  /* مسائي – الصعود من المدرسة (صعود/لم يصعد) ← تمت إضافة "لم يصعد" */
+  /* مسائي – الصعود من المدرسة (صعود/لم يصعد) */
   let doneBE=0;
   students.forEach(stu=>{
-    const st = S.board[`${stu.id}_evening`]; if(st) doneBE++;
+    const st = S.board[`${stu.id}_evening`]; 
+    if(st) doneBE++;
+    
     const {row,b1,b2} = makeRow(
       stu,
-      {label:'لم يصعد', kind:'danger', onClick:()=>markBoard(stu,'absent','evening',b1,b2)},
-      {label:'صعود',    kind:'pri',    onClick:()=>markBoard(stu,'board','evening',b1,b2)}
+      {
+        label: 'لم يصعد', 
+        kind: 'danger', 
+        onClick: ()=>markBoard(stu,'absent','evening',b1,b2)
+      },
+      {
+        label: 'صعود', 
+        kind: 'pri', 
+        onClick: ()=>markBoard(stu,'board','evening',b1,b2)
+      }
     );
-    if(st){ b1.disabled=true; b2.disabled=true; b2.textContent = (st==='board'?'تم الصعود':'لم يصعد'); }
+    
+    if(st){ 
+      b1.disabled=true; 
+      b2.disabled=true; 
+      b2.textContent = (st==='board'?'تم الصعود':'لم يصعد'); 
+    }
+    
     listBE.appendChild(row);
   });
   sumToBadge(doneBE,total,'sum_board_e');
@@ -289,49 +767,101 @@ function renderLists(students){
     const boardedE = S.board[`${stu.id}_evening`]==='board';
     const alE = S.alight[`${stu.id}_evening`]==='alight';
     if(alE) doneAE++;
+    
     const {row,b1,b2} = makeRow(
       stu,
-      {label:'—', onClick:()=>{}, kind:''},
-      {label:'نزول', kind:'pri', onClick:()=>markAlight(stu,'evening',b2)}
+      {label: '—', onClick: ()=>{}, kind: ''},
+      {
+        label: 'نزول', 
+        kind: 'pri', 
+        onClick: ()=>markAlight(stu,'evening',b2)
+      }
     );
+    
     b1.style.visibility='hidden';
-    if(!boardedE){ b2.disabled = true; b2.title='الطالب لم يصعد مساءً'; }
-    if(alE){ b2.disabled = true; b2.textContent='نزل'; }
+    if(!boardedE){ 
+      b2.disabled = true; 
+      b2.title='الطالب لم يصعد مساءً'; 
+    }
+    if(alE){ 
+      b2.disabled = true; 
+      b2.textContent='نزل'; 
+    }
+    
     listAE.appendChild(row);
   });
   sumToBadge(doneAE,total,'sum_alight_e');
 }
 
 /* ===== إشعارات + أحداث ===== */
-async function notify(title, body){ await sb.from('notifications').insert({ title, body }); }
+async function notify(title, body){ 
+  await sb.from('notifications').insert({ title, body }); 
+}
+
 async function addEvent({student_id, action, period}){
   await sb.from('attendance_events').insert({
-    student_id, action, period,
-    bus_id: currentBusId, observer_id: observerId, event_time: new Date().toISOString()
+    student_id, 
+    action, 
+    period,
+    bus_id: currentBusId, 
+    observer_id: observerId, 
+    event_time: new Date().toISOString()
   });
 }
 
 /* ===== معالجات الأزرار ===== */
 async function markBoard(stu, action, period, bLeft, bRight){
-  const ok = confirm(`تأكيد ${action==='board'?'صعود': (period==='evening'?'لم يصعد':'تسجيل غياب')}: ${stu.full_name}؟`);
+  const actionText = action==='board' ? 'صعود' : (period==='evening' ? 'لم يصعد' : 'تسجيل غياب');
+  const ok = confirm(`تأكيد ${actionText}: ${stu.full_name}؟`);
   if(!ok) return;
+  
   const S = scoped();
   const key = (period==='morning') ? stu.id : `${stu.id}_evening`;
-  S.board[key] = action; saveState();
-  if(bLeft&&bRight){ bLeft.disabled=true; bRight.disabled=true; bRight.textContent = (action==='board'?'تم الصعود': (period==='evening'?'لم يصعد':'غائب')); }
-  await addEvent({student_id: stu.id, action: action==='absent'?'absent':'board', period});
-  await notify(action==='board'?'صعود طالب':(period==='evening'?'طالب لم يصعد':'غياب طالب'), `${stu.full_name} – الفترة: ${period==='morning'?'صباحي':'مسائي'}`);
+  S.board[key] = action; 
+  saveState();
+  
+  if(bLeft&&bRight){ 
+    bLeft.disabled=true; 
+    bRight.disabled=true; 
+    bRight.textContent = (action==='board'?'تم الصعود': (period==='evening'?'لم يصعد':'غائب')); 
+  }
+  
+  await addEvent({
+    student_id: stu.id, 
+    action: action==='absent'?'absent':'board', 
+    period
+  });
+  
+  await notify(
+    action==='board'?'صعود طالب':(period==='evening'?'طالب لم يصعد':'غياب طالب'), 
+    `${stu.full_name} – الفترة: ${period==='morning'?'صباحي':'مسائي'}`
+  );
+  
   loadRoster();
 }
 
 async function markAlight(stu, period, btn){
   const ok = confirm(`تأكيد النزول: ${stu.full_name}؟`);
   if(!ok) return;
+  
   const S = scoped();
-  S.alight[ `${stu.id}_${period}` ] = 'alight'; saveState();
-  btn.disabled = true; btn.textContent='نزل';
-  await addEvent({student_id: stu.id, action:'alight', period});
-  await notify('نزول طالب', `${stu.full_name} – الفترة: ${period==='morning'?'صباحي':'مسائي'}`);
+  S.alight[ `${stu.id}_${period}` ] = 'alight'; 
+  saveState();
+  
+  btn.disabled = true; 
+  btn.textContent='نزل';
+  
+  await addEvent({
+    student_id: stu.id, 
+    action:'alight', 
+    period
+  });
+  
+  await notify(
+    'نزول طالب', 
+    `${stu.full_name} – الفترة: ${period==='morning'?'صباحي':'مسائي'}`
+  );
+  
   loadRoster();
 }
 
@@ -339,75 +869,134 @@ async function markAlight(stu, period, btn){
 function missingNamesForAlight(period, students){
   const S = scoped();
   return students.filter(stu=>{
-    const boarded = (period==='morning') ? (S.board[stu.id]==='board')
-                                         : (S.board[`${stu.id}_evening`]==='board');
+    const boarded = (period==='morning') 
+      ? (S.board[stu.id]==='board')
+      : (S.board[`${stu.id}_evening`]==='board');
     const al = S.alight[`${stu.id}_${period}`]==='alight';
     return boarded && !al;
   }).map(s=>s.full_name);
 }
 
-async function finishBoardMorning(){ alert('تم تسجيل صعود الفترة الصباحية. يمكنك متابعة النزول عند المدرسة.'); }
+async function finishBoardMorning(){ 
+  alert('تم تسجيل صعود الفترة الصباحية. يمكنك متابعة النزول عند المدرسة.'); 
+}
+
 async function finishAlightMorning(){
   const students = await getStudents();
   const missing = missingNamesForAlight('morning', students);
-  if(missing.length){ alert('لم يتم نزول الطلاب التاليين:\n- '+missing.join('\n- ')); return; }
+  if(missing.length){ 
+    alert('لم يتم نزول الطلاب التاليين:\n- '+missing.join('\n- ')); 
+    return; 
+  }
   alert('شكرًا لك! انتهت الفترة الصباحية ✅');
-  stopTracking(); resetLocks(); // فتح الأزرار للجولة القادمة
+  stopTracking(); 
+  resetLocks();
 }
 
-async function finishBoardEvening(){ alert('تم تسجيل صعود الفترة المسائية. يمكنك متابعة النزول إلى المنازل.'); }
+async function finishBoardEvening(){ 
+  alert('تم تسجيل صعود الفترة المسائية. يمكنك متابعة النزول إلى المنازل.'); 
+}
+
 async function finishAlightEvening(){
   const students = await getStudents();
   const missing = missingNamesForAlight('evening', students);
-  if(missing.length){ alert('لم يتم نزول الطلاب التاليين:\n- '+missing.join('\n- ')); return; }
+  if(missing.length){ 
+    alert('لم يتم نزول الطلاب التاليين:\n- '+missing.join('\n- ')); 
+    return; 
+  }
   alert('شكرًا لك! انتهت الفترة المسائية ✅');
-  stopTracking(); resetLocks();
+  stopTracking(); 
+  resetLocks();
 }
 
 function resetLocks(){
-  const k = keyScope(); state[k] = {board:{}, alight:{}}; saveState();
+  const k = keyScope(); 
+  state[k] = {board:{}, alight:{}}; 
+  saveState();
   loadRoster();
 }
 
 /* ===== جلب الطلاب للباص الحالي ===== */
 async function getStudents(){
   if(!currentBusId) return [];
-  const { data } = await sb.from('student_bus').select('students(id, full_name, home_lat, home_lng)').eq('bus_id', currentBusId);
-  return (data||[]).map(r=>r.students).filter(Boolean).sort((a,b)=>a.full_name.localeCompare(b.full_name,'ar'));
+  const { data } = await sb.from('student_bus')
+    .select('students(id, full_name, home_lat, home_lng)')
+    .eq('bus_id', currentBusId);
+  return (data||[]).map(r=>r.students)
+    .filter(Boolean)
+    .sort((a,b)=>a.full_name.localeCompare(b.full_name,'ar'));
 }
 
-/* ===== تتبّع GPS (يرسل للمشرف كل ~10 ثوان) ويظهر موقعي على الخريطة ===== */
+/* ===== تتبّع GPS ===== */
 let watchId = null, lastSent = 0;
+
 function setTrackingUI(running){
   document.getElementById('btn_track').disabled = running;
   document.getElementById('btn_stop').disabled = !running;
   const ts = document.getElementById('track_status');
   ts.textContent = 'التتبّع: ' + (running?'نشِط':'متوقف');
-  ts.style.background = running ? '#12381f' : 'transparent';
+  ts.style.background = running ? 'linear-gradient(135deg, var(--pri), var(--sec))' : 'var(--glass)';
+  ts.style.color = running ? 'white' : 'var(--ink)';
 }
+
 async function sendPoint(lat,lng){
   if(!currentBusId) return;
-  await sb.from('gps_tracks').insert({ bus_id: currentBusId, lat, lng });
+  await sb.from('gps_tracks').insert({ 
+    bus_id: currentBusId, 
+    lat, 
+    lng 
+  });
 }
+
 function toggleTracking(on){
   if(on){
-    if(!navigator.geolocation){ alert('المتصفح لا يدعم GPS'); return; }
-    if(watchId){ setTrackingUI(true); return; }
+    if(!navigator.geolocation){ 
+      alert('المتصفح لا يدعم GPS'); 
+      return; 
+    }
+    if(watchId){ 
+      setTrackingUI(true); 
+      return; 
+    }
+    
     watchId = navigator.geolocation.watchPosition(async pos=>{
       const now = Date.now();
-      const lat = pos.coords.latitude, lng = pos.coords.longitude;
+      const lat = pos.coords.latitude, 
+            lng = pos.coords.longitude;
+      
       // ضع/حدّث موقعي على الخريطة
-      if(!myMarker){ myMarker = L.marker([lat,lng]).addTo(omap).bindTooltip('موقعي'); }
-      else { myMarker.setLatLng([lat,lng]); }
-      if(now - lastSent >= 9000){ lastSent = now; await sendPoint(lat,lng); }
-    }, err=>{ alert('تعذر الحصول على الموقع: '+err.message); }, {enableHighAccuracy:true, maximumAge:5000, timeout:15000});
+      if(!myMarker){ 
+        myMarker = L.marker([lat,lng], {icon: observerIcon})
+          .addTo(omap)
+          .bindTooltip('موقعي - الملاحظ')
+          .openTooltip();
+      } else { 
+        myMarker.setLatLng([lat,lng]); 
+      }
+      
+      if(now - lastSent >= 9000){ 
+        lastSent = now; 
+        await sendPoint(lat,lng); 
+      }
+    }, err=>{ 
+      alert('تعذر الحصول على الموقع: '+err.message); 
+    }, {
+      enableHighAccuracy:true, 
+      maximumAge:5000, 
+      timeout:15000
+    });
+    
     setTrackingUI(true);
-  }else{
+  } else {
     stopTracking();
   }
 }
+
 function stopTracking(){
-  if(watchId){ navigator.geolocation.clearWatch(watchId); watchId=null; }
+  if(watchId){ 
+    navigator.geolocation.clearWatch(watchId); 
+    watchId=null; 
+  }
   setTrackingUI(false);
 }
 
@@ -419,4 +1008,5 @@ function stopTracking(){
   if(currentBusId) await loadRoster();
 })();
 </script>
-</body></html>
+</body>
+</html>
