@@ -1,288 +1,422 @@
 <!DOCTYPE html><html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
-<title>ملاحظ الباص – FMS Lite (Mobile)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<title>ملاحظ الباص – FMS Lite</title>
 
+<link rel="stylesheet" href="https://unpkg.com/modern-normalize/modern-normalize.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-:root{--bg:#0b1020;--card:#101826;--ink:#e7edf6;--muted:#9fb0c8;--line:#233046;--ok:#22c55e;--ok2:#38bdf8;--danger:#ef4444}
-*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font-family:"Tajawal",system-ui}
-header{position:sticky;top:0;z-index:10;padding:10px 12px;background:#0c1222;border-bottom:1px solid #1e293b;display:flex;gap:8px;align-items:center;justify-content:space-between}
-select,button{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#0c1424;color:var(--ink);font-size:16px}
-button.primary{background:linear-gradient(135deg,var(--ok),var(--ok2));border:none;font-weight:700}
-button.danger{background:var(--danger);border:none;font-weight:700}
-button.neutral{background:#0c1424;border:1px solid var(--line);font-weight:700}
-.container{display:grid;grid-template-columns:1fr;gap:12px;padding:12px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px}
-#map{height:360px;border-radius:12px;border:1px solid var(--line)}
-.student{display:flex;gap:8px;align-items:center;justify-content:space-between;border-bottom:1px dashed #2a3a51;padding:10px 0}
-.btns{display:flex;gap:6px}
-.btns button{padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:#0c1424;color:var(--ink)}
-.btns button.ok{background:linear-gradient(135deg,var(--ok),var(--ok2));border:none}
-.btns button.danger{background:var(--danger);border:none}
-.small{font-size:12px;color:var(--muted)}
-.locked{opacity:.6;pointer-events:none}
-.footer{position:sticky;bottom:0;padding:8px;background:#0c1222;border-top:1px solid #1e293b;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-.hint{font-size:12px;color:var(--muted);margin-top:6px}
-.bar{display:flex;gap:8px}
+:root{--bg:#0b1222;--card:#0f172a;--ink:#e7edf6;--muted:#9fb0c8;--line:#203049;--pri:#22c55e;--sec:#38bdf8;--danger:#ef4444;--warn:#f59e0b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Tajawal",system-ui}
+header{position:sticky;top:0;z-index:10;background:#0c1528;border-bottom:1px solid var(--line);padding:12px}
+h3{margin:12px 0}
+.container{padding:12px;max-width:760px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;margin-bottom:12px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{width:100%;padding:12px;border-radius:12px;border:1px solid #274062;background:#12203a;color:var(--ink);font-weight:700}
+.btn.pri{background:linear-gradient(135deg,var(--pri),var(--sec));border:none}
+.btn.danger{background:var(--danger);border:none}
+.btn.warn{background:var(--warn);border:none;color:#111827}
+.btn.ghost{background:#0f1a33;border:1px solid #22324b}
+.btn:disabled{opacity:.45}
+select,input{width:100%;padding:12px;border-radius:12px;border:1px solid #274062;background:#0f1a33;color:var(--ink)}
+.badge{display:inline-block;padding:2px 8px;border:1px solid #2a3a51;border-radius:999px;font-size:12px}
+.section-title{display:flex;justify-content:space-between;align-items:center}
+.list{display:grid;gap:8px}
+.item{display:grid;grid-template-columns:1fr 120px 110px; gap:6px; align-items:center}
+@media (max-width:520px){ .item{grid-template-columns:1fr 1fr 1fr} }
+.name{font-weight:700}
+.pill{padding:3px 8px;border-radius:999px;border:1px solid #29405c;font-size:12px;color:var(--muted)}
+.tabbar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.tabbar button{padding:10px;border-radius:999px;border:1px solid #254161;background:#0f1a33;color:var(--ink)}
+.tabbar button.active{background:linear-gradient(135deg,var(--sec),#5eead4);border:none;color:#0a1020;font-weight:800}
+footer{padding:10px;text-align:center;color:var(--muted);font-size:12px}
+.kicker{font-size:12px;color:var(--muted)}
+hr{border:none;border-top:1px dashed #23324b;margin:10px 0}
+#omap{height:300px;border-radius:14px;border:1px solid #223046}
 </style>
 </head>
 <body>
 <header>
-  <div style="font-weight:700">🚍 ملاحظ الباص</div>
-  <div class="bar" style="flex:1">
-    <select id="bus_pick" aria-label="اختر الباص" onchange="pickBus()"></select>
-    <select id="period_pick" aria-label="اختر الفترة" onchange="onPeriodChange()">
-      <option value="">الفترة…</option>
-      <option value="morning">صباحي</option>
-      <option value="evening">مسائي</option>
-    </select>
+  <div class="row" style="justify-content:space-between">
+    <div>🚍 واجهة ملاحظ الباص</div>
+    <div class="badge" id="track_status">التتبّع: متوقف</div>
   </div>
 </header>
 
 <div class="container">
+  <!-- اختيار الفترة والباص -->
   <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <h3 style="margin:0;font-size:16px">الخريطة والمسار</h3>
-      <div class="small">* تأكد من منح إذن الموقع</div>
+    <div class="tabbar">
+      <button id="tab_morning" class="active" onclick="setPeriod('morning')">الفترة الصباحية</button>
+      <button id="tab_evening" onclick="setPeriod('evening')">الفترة المسائية</button>
     </div>
-    <div id="map"></div>
-    <div class="hint">عند الضغط على «تفعيل التتبع» يبدأ إرسال GPS ويظهر موقع الباص في لوحة المشرف مباشرة.</div>
+    <div class="row">
+      <label style="flex:1">اختر الباص:
+        <select id="bus_select"></select>
+      </label>
+      <button class="btn pri" style="flex:0 0 120px" onclick="loadRoster()">عرض</button>
+    </div>
+    <div class="kicker">اختر الباص ثم اضغط «عرض» لإظهار الطلاب على القوائم والخريطة.</div>
   </div>
 
+  <!-- خريطة الطلاب + موقعي -->
   <div class="card">
-    <h3 style="margin:0 0 8px 0;font-size:16px">الطلاب</h3>
-    <div id="students" class="small">اختر الباص ثم اختر الفترة لعرض الطلاب…</div>
+    <div class="section-title">
+      <h3>الخريطة</h3>
+      <span class="pill">نقاط الطلاب + موقعي عند التتبع</span>
+    </div>
+    <div id="omap"></div>
+    <div class="row">
+      <button class="btn ghost" onclick="fitAll()">ملائمة جميع النقاط</button>
+    </div>
   </div>
-</div>
 
-<div class="footer">
-  <button id="startBtn" class="primary" onclick="ensurePermissionAndStart()" disabled>تفعيل التتبّع</button>
-  <button id="stopBtn" class="danger" onclick="stopTracking()" disabled>إيقاف</button>
-  <button id="doneBtn" class="neutral" onclick="finalizePeriod()" disabled>تم</button>
+  <!-- تتبع GPS -->
+  <div class="card">
+    <div class="section-title">
+      <h3>تتبّع الموقع (GPS)</h3>
+      <span class="pill">يُرسل كل ~10 ثوانٍ لصفحة المشرف</span>
+    </div>
+    <div class="row">
+      <button id="btn_track" class="btn pri" onclick="toggleTracking(true)">تشغيل التتبّع</button>
+      <button id="btn_stop" class="btn ghost" onclick="toggleTracking(false)" disabled>إيقاف التتبّع</button>
+    </div>
+    <div id="gps_hint" class="kicker">تأكد من منح إذن الموقع للمتصفح.</div>
+  </div>
+
+  <!-- صباحي: الصعود -->
+  <div class="card" id="blk_board_morning">
+    <div class="section-title"><h3>صباحًا – الصعود من المنازل</h3><span class="pill" id="sum_board_m">0/0</span></div>
+    <div id="list_board_m" class="list"></div>
+    <div class="row">
+      <button class="btn pri" onclick="finishBoardMorning()">تم صعود الطلاب</button>
+    </div>
+  </div>
+
+  <!-- صباحي: النزول للمدرسة -->
+  <div class="card" id="blk_alight_morning">
+    <div class="section-title"><h3>صباحًا – النزول عند المدرسة</h3><span class="pill" id="sum_alight_m">0/0</span></div>
+    <div id="list_alight_m" class="list"></div>
+    <div class="row">
+      <button class="btn pri" onclick="finishAlightMorning()">تم نزول جميع الطلاب للمدرسة</button>
+    </div>
+  </div>
+
+  <!-- مسائي: الصعود من المدرسة (أُضيف زر "لم يصعد") -->
+  <div class="card" id="blk_board_evening" style="display:none">
+    <div class="section-title"><h3>مساءً – الصعود من المدرسة</h3><span class="pill" id="sum_board_e">0/0</span></div>
+    <div id="list_board_e" class="list"></div>
+    <div class="row">
+      <button class="btn pri" onclick="finishBoardEvening()">تم صعود جميع الطلاب</button>
+    </div>
+  </div>
+
+  <!-- مسائي: النزول إلى المنازل -->
+  <div class="card" id="blk_alight_evening" style="display:none">
+    <div class="section-title"><h3>مساءً – النزول إلى المنازل</h3><span class="pill" id="sum_alight_e">0/0</span></div>
+    <div id="list_alight_e" class="list"></div>
+    <div class="row">
+      <button class="btn pri" onclick="finishAlightEvening()">نزل جميع الطلاب إلى منازلهم</button>
+    </div>
+  </div>
+
+  <footer>© نظام FMS – واجهة الملاحظ</footer>
 </div>
 
 <script>
 /* ===== Supabase ===== */
 const SUPABASE_URL = "https://vdolempilbsofmriaohf.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkb2xlbXBpbGJzb2Ztcmlhb2hmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE0NDU1ODcsImV4cCI6MjA3NzAyMTU4N30.OOHmiasyaXS8Rz_xpmrCIonwc8wRclLqNjrrG2J4ckw";
-const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-/* ===== State ===== */
-let map, myMarker=null, pathLine=null, pathPts=[];
-let watchId=null, lastPos=null, pushTimer=null;
-let myBus=null, currentPeriod='', loadedStudents=[];
-let frozen={morning:new Set(), evening:new Set()}; // يُجمّد فقط بعد الضغط
-let observerName='—';
-const $ = sel => document.querySelector(sel);
+/* ===== حالة الصفحة ===== */
+let currentPeriod = localStorage.getItem('period') || 'morning';
+let currentBusId = Number(localStorage.getItem('bus_id')) || null;
+let observerId = null; // أربطه لاحقًا إن لديك جلسة مصادقة
 
-/* ===== Helpers ===== */
-function saveSelection(){
-  localStorage.setItem('fms.bus_id', myBus?.id ? String(myBus.id) : '');
-  localStorage.setItem('fms.period', currentPeriod || '');
+// تخزين حالات الأزرار لكل يوم/فترة/باص
+let state = JSON.parse(localStorage.getItem('obs_state')||'{}');
+function saveState(){ localStorage.setItem('obs_state', JSON.stringify(state)); }
+function keyScope(){ return `${new Date().toISOString().slice(0,10)}_${currentPeriod}_${currentBusId||'0'}`; }
+function scoped(){ const k=keyScope(); state[k]=state[k]||{board:{},alight:{}}; return state[k]; }
+
+/* ===== خريطة الملاحظ ===== */
+let omap, stuLayer = L.layerGroup(), myMarker=null;
+function initOMap(){
+  omap = L.map('omap').setView([25.285,51.531], 12);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19, attribution:'&copy; OpenStreetMap'}).addTo(omap);
+  stuLayer.addTo(omap);
 }
-function loadSelection(){
-  const bid = localStorage.getItem('fms.bus_id');
-  const per = localStorage.getItem('fms.period');
-  return { bid: bid ? Number(bid) : null, per: per || '' };
-}
-function arabicPeriod(p){ return p==='morning'?'صباحية': p==='evening'?'مسائية':'—'; }
-
-/* ===== Map ===== */
-function initMap(){
-  map = L.map('map',{zoomControl:false}).setView([25.285,51.531], 13);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19, attribution:'&copy; OpenStreetMap'}).addTo(map);
-}
-
-/* ===== Load buses + restore selection ===== */
-async function loadBusList(){
-  const { data, error } = await client.from('buses').select('id, school_bus_no').order('school_bus_no');
-  if(error){ alert(error.message); return; }
-  $('#bus_pick').innerHTML = `<option value="">اختر الباص…</option>`+(data||[]).map(b=>`<option value="${b.id}">${b.school_bus_no}</option>`).join('');
-
-  const { bid, per } = loadSelection();
-  if(bid){
-    $('#bus_pick').value = String(bid);
-    myBus = { id: bid };
-    await fetchObserverName();
-  }
-  if(per){ $('#period_pick').value = per; currentPeriod = per; }
-  updateFooterButtonsState();
-  if(myBus?.id && currentPeriod){ await loadStudents(); renderStudents(); }
-  else if(myBus?.id){ $('#students').textContent = 'اختر الفترة…'; }
+function fitAll(){
+  const group = new L.FeatureGroup();
+  stuLayer.eachLayer(l=>group.addLayer(l));
+  if(myMarker) group.addLayer(myMarker);
+  if(group.getLayers().length){ omap.fitBounds(group.getBounds(),{padding:[20,20]}); }
 }
 
-/* ===== Observer name for message ===== */
-async function fetchObserverName(){
-  observerName = '—';
-  if(!myBus?.id) return;
-  const { data: bus } = await client.from('buses').select('observer_id').eq('id', myBus.id).maybeSingle();
-  if(bus?.observer_id){
-    const { data: prof } = await client.from('profiles').select('full_name').eq('id', bus.observer_id).maybeSingle();
-    if(prof?.full_name) observerName = prof.full_name;
-  }
-}
-
-/* ===== Changes ===== */
-async function pickBus(){
-  const val = $('#bus_pick').value;
-  myBus = val ? { id: Number(val) } : null;
-  await fetchObserverName();
-  saveSelection();
-  updateFooterButtonsState();
-
-  if(!myBus){ $('#students').textContent = 'اختر الباص…'; return; }
-  if(currentPeriod){ await loadStudents(); renderStudents(); }
-  else{ $('#students').textContent = 'اختر الفترة…'; }
-}
-async function onPeriodChange(){
-  currentPeriod = $('#period_pick').value || '';
-  saveSelection();
-  updateFooterButtonsState();
-
-  // لا تجميد من القاعدة — فقط بعد الضغط
-  frozen.morning.clear(); frozen.evening.clear();
-
-  if(!myBus?.id || !currentPeriod){ $('#students').textContent = 'اختر الباص ثم الفترة…'; return; }
-  await loadStudents(); renderStudents();
-}
-
-/* ===== Students ===== */
-async function loadStudents(){
-  const { data: rows, error } = await client
-    .from('student_bus')
-    .select('student_id, students(id, full_name, home_lat, home_lng)')
-    .eq('bus_id', myBus.id);
-  if(error){ alert(error.message); return; }
-  loadedStudents = (rows||[]).map(r=>r.students).filter(Boolean);
-}
-function renderStudents(){
-  const wrap = $('#students');
-  if(!myBus?.id || !currentPeriod){ wrap.textContent='اختر الباص ثم الفترة…'; return; }
-  wrap.innerHTML = (loadedStudents||[]).map(s=>{
-    const locked = frozen[currentPeriod].has(s.id) ? 'locked' : '';
-    const gmap = (s.home_lat && s.home_lng) ? `<a class="small" target="_blank" href="https://www.google.com/maps/?q=${s.home_lat},${s.home_lng}">ملاحة</a>` : '';
-    return `<div class="student ${locked}" id="stu_${s.id}">
-      <div>
-        <div><b>${s.full_name}</b></div>
-        <div class="small">${s.home_lat??''} ${s.home_lng??''} ${gmap}</div>
-      </div>
-      <div class="btns">
-        <button class="ok" onclick="confirmAndMark(${s.id},'board')">صعود</button>
-        <button class="ok" onclick="confirmAndMark(${s.id},'alight')">نزول</button>
-        <button class="danger" onclick="confirmAndMark(${s.id},'absent')">غائب</button>
-      </div>
-    </div>`;
-  }).join('') || '<div class="small">لا يوجد طلاب لهذا الباص.</div>';
-}
-
-/* ===== Attendance (freeze only after click) ===== */
-async function confirmAndMark(student_id, action){
-  if(!myBus?.id) return alert('اختر الباص أولاً');
-  if(!currentPeriod) return alert('اختر الفترة');
-  if(frozen[currentPeriod].has(student_id)) return;
-
-  const actTxt = action==='board'?'صعود': action==='alight'?'نزول':'غياب';
-  if(!confirm(`تأكيد ${actTxt} الطالب؟`)) return;
-
-  const { error } = await client.from('attendance_events').insert({
-    student_id, bus_id: myBus.id, period: currentPeriod, action
+/* رسم نقاط الطلاب */
+async function drawStudentPointsOnMap(){
+  stuLayer.clearLayers();
+  if(!currentBusId) return;
+  const { data, error } = await sb.from('student_bus').select('students(full_name, home_lat, home_lng)').eq('bus_id', currentBusId);
+  if(error) return;
+  const studs = (data||[]).map(r=>r.students).filter(s=>s && typeof s.home_lat==='number' && typeof s.home_lng==='number');
+  studs.forEach(s=>{
+    const m = L.circleMarker([s.home_lat, s.home_lng], { radius:7, opacity:0.95 })
+      .bindPopup(`<b>${s.full_name}</b><br/>
+        <a target="_blank" href="https://www.google.com/maps?q=${s.home_lat},${s.home_lng}">فتح في Google Maps</a>`);
+    stuLayer.addLayer(m);
   });
+  fitAll();
+}
+
+/* ===== تحميل القوائم ===== */
+async function loadBuses(){
+  const { data } = await sb.from('buses').select('id, school_bus_no').order('school_bus_no');
+  const sel = document.getElementById('bus_select');
+  sel.innerHTML = (data||[]).map(b=>`<option value="${b.id}" ${b.id===currentBusId?'selected':''}>${b.school_bus_no}</option>`).join('');
+  if(!currentBusId && data?.length){ currentBusId=data[0].id; localStorage.setItem('bus_id', String(currentBusId)); }
+}
+
+async function loadRoster(){
+  const sel = document.getElementById('bus_select');
+  currentBusId = Number(sel.value||'0')||null;
+  localStorage.setItem('bus_id', String(currentBusId||''));
+  if(!currentBusId){ alert('اختر الباص أولًا.'); return; }
+
+  const { data, error } = await sb.from('student_bus')
+    .select('students(id, full_name, home_lat, home_lng)')
+    .eq('bus_id', currentBusId);
   if(error){ alert(error.message); return; }
 
-  frozen[currentPeriod].add(student_id);
-  const row = document.getElementById(`stu_${student_id}`); if(row) row.classList.add('locked');
+  const students = (data||[]).map(r=>r.students).filter(Boolean).sort((a,b)=>a.full_name.localeCompare(b.full_name,'ar'));
+  renderLists(students);
+  drawStudentPointsOnMap();
 }
 
-/* ===== GPS controls ===== */
-async function ensurePermissionAndStart(){
-  if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-    alert('لتفعيل الـGPS يجب فتح الصفحة عبر HTTPS أو على localhost.');
-    return;
-  }
-  if(!('geolocation' in navigator)){ alert('المتصفح لا يدعم GPS'); return; }
-  try{
-    if('permissions' in navigator && navigator.permissions?.query){
-      const st = await navigator.permissions.query({name:'geolocation'});
-      if(st.state==='denied'){ alert('يرجى منح إذن الموقع من إعدادات المتصفح'); return; }
-    }
-  }catch(_){}
-  startTracking();
-}
-function startTracking(){
-  if(!myBus?.id){ alert('اختر الباص أولاً'); return; }
-  if(watchId!==null) return;
+/* ===== واجهة التبويب ===== */
+function setPeriod(p){
+  currentPeriod = p; localStorage.setItem('period', p);
+  document.getElementById('tab_morning').classList.toggle('active', p==='morning');
+  document.getElementById('tab_evening').classList.toggle('active', p==='evening');
 
-  watchId = navigator.geolocation.watchPosition(onPos, onErr, {
-    enableHighAccuracy: true,
-    maximumAge: 0,
-    timeout: 15000
+  document.getElementById('blk_board_morning').style.display = (p==='morning')?'block':'none';
+  document.getElementById('blk_alight_morning').style.display = (p==='morning')?'block':'none';
+  document.getElementById('blk_board_evening').style.display = (p==='evening')?'block':'none';
+  document.getElementById('blk_alight_evening').style.display = (p==='evening')?'block':'none';
+
+  if(currentBusId) loadRoster();
+}
+
+/* ===== واجهة القوائم + الأزرار ===== */
+function renderLists(students){
+  const S = scoped();
+  function sumToBadge(done,total,elId){ document.getElementById(elId).textContent = `${done}/${total}`; }
+
+  const listBM = document.getElementById('list_board_m'); listBM.innerHTML='';
+  const listAM = document.getElementById('list_alight_m'); listAM.innerHTML='';
+  const listBE = document.getElementById('list_board_e'); listBE.innerHTML='';
+  const listAE = document.getElementById('list_alight_e'); listAE.innerHTML='';
+  const total = students.length;
+
+  const makeRow = (stu, leftBtn, rightBtn) => {
+    const row = document.createElement('div'); row.className='item';
+    const nm = document.createElement('div'); nm.className='name'; nm.textContent = stu.full_name;
+    const b1 = document.createElement('button'); b1.className='btn ghost'; b1.textContent=leftBtn.label;
+    const b2 = document.createElement('button'); b2.className='btn ghost'; b2.textContent=rightBtn.label;
+    b1.onclick = leftBtn.onClick; b2.onclick = rightBtn.onClick;
+    if(leftBtn.kind==='danger') b1.classList.add('danger');
+    if(rightBtn.kind==='pri') b2.classList.add('pri');
+    row.append(nm,b1,b2);
+    return {row,b1,b2};
+  };
+
+  /* صباحي – الصعود (صعود/غائب) */
+  let doneBM=0;
+  students.forEach(stu=>{
+    const status = S.board[stu.id]; if(status) doneBM++;
+    const {row,b1,b2} = makeRow(
+      stu,
+      {label:'غائب',kind:'danger', onClick:()=>markBoard(stu,'absent','morning',b1,b2)},
+      {label:'صعود', kind:'pri',    onClick:()=>markBoard(stu,'board','morning',b1,b2)}
+    );
+    if(status){ b1.disabled = true; b2.disabled = true; b2.textContent = (status==='board'?'تم الصعود':'غائب'); }
+    listBM.appendChild(row);
   });
-  pushTimer = setInterval(async ()=>{
-    if(lastPos && myBus?.id){
-      await sendFix(lastPos.coords.latitude, lastPos.coords.longitude);
-    }
-  }, 10000);
+  sumToBadge(doneBM,total,'sum_board_m');
 
-  $('#startBtn').disabled = true;
-  $('#stopBtn').disabled  = false;
+  /* صباحي – النزول (الغائب صباحًا مجمّد زر نزوله) */
+  let doneAM=0;
+  students.forEach(stu=>{
+    const boarded = S.board[stu.id]==='board';
+    const al = S.alight[`${stu.id}_morning`]==='alight';
+    if(al) doneAM++;
+    const {row,b1,b2} = makeRow(
+      stu,
+      {label:'—', onClick:()=>{}, kind:''},
+      {label:'نزول', kind:'pri', onClick:()=>markAlight(stu,'morning',b2)}
+    );
+    b1.style.visibility='hidden';
+    if(!boarded){ b2.disabled = true; b2.title='الطالب غائب صباحًا'; }
+    if(al){ b2.disabled = true; b2.textContent='نزل'; }
+    listAM.appendChild(row);
+  });
+  sumToBadge(doneAM,total,'sum_alight_m');
+
+  /* مسائي – الصعود من المدرسة (صعود/لم يصعد) ← تمت إضافة "لم يصعد" */
+  let doneBE=0;
+  students.forEach(stu=>{
+    const st = S.board[`${stu.id}_evening`]; if(st) doneBE++;
+    const {row,b1,b2} = makeRow(
+      stu,
+      {label:'لم يصعد', kind:'danger', onClick:()=>markBoard(stu,'absent','evening',b1,b2)},
+      {label:'صعود',    kind:'pri',    onClick:()=>markBoard(stu,'board','evening',b1,b2)}
+    );
+    if(st){ b1.disabled=true; b2.disabled=true; b2.textContent = (st==='board'?'تم الصعود':'لم يصعد'); }
+    listBE.appendChild(row);
+  });
+  sumToBadge(doneBE,total,'sum_board_e');
+
+  /* مسائي – النزول للمنازل (من لم يصعد مساءً مجمّد زر نزوله) */
+  let doneAE=0;
+  students.forEach(stu=>{
+    const boardedE = S.board[`${stu.id}_evening`]==='board';
+    const alE = S.alight[`${stu.id}_evening`]==='alight';
+    if(alE) doneAE++;
+    const {row,b1,b2} = makeRow(
+      stu,
+      {label:'—', onClick:()=>{}, kind:''},
+      {label:'نزول', kind:'pri', onClick:()=>markAlight(stu,'evening',b2)}
+    );
+    b1.style.visibility='hidden';
+    if(!boardedE){ b2.disabled = true; b2.title='الطالب لم يصعد مساءً'; }
+    if(alE){ b2.disabled = true; b2.textContent='نزل'; }
+    listAE.appendChild(row);
+  });
+  sumToBadge(doneAE,total,'sum_alight_e');
+}
+
+/* ===== إشعارات + أحداث ===== */
+async function notify(title, body){ await sb.from('notifications').insert({ title, body }); }
+async function addEvent({student_id, action, period}){
+  await sb.from('attendance_events').insert({
+    student_id, action, period,
+    bus_id: currentBusId, observer_id: observerId, event_time: new Date().toISOString()
+  });
+}
+
+/* ===== معالجات الأزرار ===== */
+async function markBoard(stu, action, period, bLeft, bRight){
+  const ok = confirm(`تأكيد ${action==='board'?'صعود': (period==='evening'?'لم يصعد':'تسجيل غياب')}: ${stu.full_name}؟`);
+  if(!ok) return;
+  const S = scoped();
+  const key = (period==='morning') ? stu.id : `${stu.id}_evening`;
+  S.board[key] = action; saveState();
+  if(bLeft&&bRight){ bLeft.disabled=true; bRight.disabled=true; bRight.textContent = (action==='board'?'تم الصعود': (period==='evening'?'لم يصعد':'غائب')); }
+  await addEvent({student_id: stu.id, action: action==='absent'?'absent':'board', period});
+  await notify(action==='board'?'صعود طالب':(period==='evening'?'طالب لم يصعد':'غياب طالب'), `${stu.full_name} – الفترة: ${period==='morning'?'صباحي':'مسائي'}`);
+  loadRoster();
+}
+
+async function markAlight(stu, period, btn){
+  const ok = confirm(`تأكيد النزول: ${stu.full_name}؟`);
+  if(!ok) return;
+  const S = scoped();
+  S.alight[ `${stu.id}_${period}` ] = 'alight'; saveState();
+  btn.disabled = true; btn.textContent='نزل';
+  await addEvent({student_id: stu.id, action:'alight', period});
+  await notify('نزول طالب', `${stu.full_name} – الفترة: ${period==='morning'?'صباحي':'مسائي'}`);
+  loadRoster();
+}
+
+/* ===== فحص اكتمال ونهايات الفترات ===== */
+function missingNamesForAlight(period, students){
+  const S = scoped();
+  return students.filter(stu=>{
+    const boarded = (period==='morning') ? (S.board[stu.id]==='board')
+                                         : (S.board[`${stu.id}_evening`]==='board');
+    const al = S.alight[`${stu.id}_${period}`]==='alight';
+    return boarded && !al;
+  }).map(s=>s.full_name);
+}
+
+async function finishBoardMorning(){ alert('تم تسجيل صعود الفترة الصباحية. يمكنك متابعة النزول عند المدرسة.'); }
+async function finishAlightMorning(){
+  const students = await getStudents();
+  const missing = missingNamesForAlight('morning', students);
+  if(missing.length){ alert('لم يتم نزول الطلاب التاليين:\n- '+missing.join('\n- ')); return; }
+  alert('شكرًا لك! انتهت الفترة الصباحية ✅');
+  stopTracking(); resetLocks(); // فتح الأزرار للجولة القادمة
+}
+
+async function finishBoardEvening(){ alert('تم تسجيل صعود الفترة المسائية. يمكنك متابعة النزول إلى المنازل.'); }
+async function finishAlightEvening(){
+  const students = await getStudents();
+  const missing = missingNamesForAlight('evening', students);
+  if(missing.length){ alert('لم يتم نزول الطلاب التاليين:\n- '+missing.join('\n- ')); return; }
+  alert('شكرًا لك! انتهت الفترة المسائية ✅');
+  stopTracking(); resetLocks();
+}
+
+function resetLocks(){
+  const k = keyScope(); state[k] = {board:{}, alight:{}}; saveState();
+  loadRoster();
+}
+
+/* ===== جلب الطلاب للباص الحالي ===== */
+async function getStudents(){
+  if(!currentBusId) return [];
+  const { data } = await sb.from('student_bus').select('students(id, full_name, home_lat, home_lng)').eq('bus_id', currentBusId);
+  return (data||[]).map(r=>r.students).filter(Boolean).sort((a,b)=>a.full_name.localeCompare(b.full_name,'ar'));
+}
+
+/* ===== تتبّع GPS (يرسل للمشرف كل ~10 ثوان) ويظهر موقعي على الخريطة ===== */
+let watchId = null, lastSent = 0;
+function setTrackingUI(running){
+  document.getElementById('btn_track').disabled = running;
+  document.getElementById('btn_stop').disabled = !running;
+  const ts = document.getElementById('track_status');
+  ts.textContent = 'التتبّع: ' + (running?'نشِط':'متوقف');
+  ts.style.background = running ? '#12381f' : 'transparent';
+}
+async function sendPoint(lat,lng){
+  if(!currentBusId) return;
+  await sb.from('gps_tracks').insert({ bus_id: currentBusId, lat, lng });
+}
+function toggleTracking(on){
+  if(on){
+    if(!navigator.geolocation){ alert('المتصفح لا يدعم GPS'); return; }
+    if(watchId){ setTrackingUI(true); return; }
+    watchId = navigator.geolocation.watchPosition(async pos=>{
+      const now = Date.now();
+      const lat = pos.coords.latitude, lng = pos.coords.longitude;
+      // ضع/حدّث موقعي على الخريطة
+      if(!myMarker){ myMarker = L.marker([lat,lng]).addTo(omap).bindTooltip('موقعي'); }
+      else { myMarker.setLatLng([lat,lng]); }
+      if(now - lastSent >= 9000){ lastSent = now; await sendPoint(lat,lng); }
+    }, err=>{ alert('تعذر الحصول على الموقع: '+err.message); }, {enableHighAccuracy:true, maximumAge:5000, timeout:15000});
+    setTrackingUI(true);
+  }else{
+    stopTracking();
+  }
 }
 function stopTracking(){
-  if(watchId!==null) navigator.geolocation.clearWatch(watchId);
-  watchId = null;
-  if(pushTimer){ clearInterval(pushTimer); pushTimer=null; }
-  $('#startBtn').disabled = false;
-  $('#stopBtn').disabled  = true;
-}
-async function onPos(pos){
-  lastPos = pos;
-  const lat = pos.coords.latitude;
-  const lng = pos.coords.longitude;
-
-  if(!myMarker){ myMarker = L.marker([lat,lng]).addTo(map).bindTooltip('موقع الباص'); }
-  else myMarker.setLatLng([lat,lng]);
-
-  pathPts.push([lat,lng]);
-  if(pathLine){ pathLine.setLatLngs(pathPts); }
-  else pathLine = L.polyline(pathPts,{weight:4,opacity:.9}).addTo(map);
-
-  await sendFix(lat, lng);
-}
-function onErr(err){
-  console.log('GPS error', err);
-  if(err.code === 1) alert('تم رفض إذن الموقع. فعّل الإذن من إعدادات المتصفح.');
-  else if(err.code === 2) alert('تعذر الحصول على الإحداثيات. تحقّق من GPS.');
-  else if(err.code === 3) alert('انتهى وقت طلب الموقع. حاول مرة أخرى.');
-}
-async function sendFix(lat, lng){
-  const { error } = await client.from('gps_tracks').insert({ bus_id: myBus.id, lat, lng });
-  if(error){ console.error('Supabase insert error:', error); }
-}
-
-/* ===== Done button ===== */
-function finalizePeriod(){
-  if(!myBus?.id || !currentPeriod){ alert('اختر الباص والفترة أولاً'); return; }
-  stopTracking(); // إيقاف مؤقت
-  alert(`انتهت الفترة ${arabicPeriod(currentPeriod)} — شكرًا لك ${observerName} 🌟`);
-}
-
-/* ===== Footer state ===== */
-function updateFooterButtonsState(){
-  const hasBus = !!myBus?.id;
-  $('#startBtn').disabled = !hasBus;
-  $('#stopBtn').disabled  = (watchId===null);
-  $('#doneBtn').disabled  = !(hasBus && !!currentPeriod);
+  if(watchId){ navigator.geolocation.clearWatch(watchId); watchId=null; }
+  setTrackingUI(false);
 }
 
 /* ===== Boot ===== */
-(async ()=>{
-  initMap();
-  await loadBusList();
-  updateFooterButtonsState();
+(async function boot(){
+  initOMap();
+  await loadBuses();
+  setPeriod(currentPeriod);
+  if(currentBusId) await loadRoster();
 })();
 </script>
 </body></html>
