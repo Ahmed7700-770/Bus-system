@@ -14,6 +14,7 @@
 header{padding:14px 18px;background:#0c1222;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center}
 a{color:#aee3ff;text-decoration:none}
 .container{padding:16px;display:grid;grid-template-columns:360px 1fr;gap:16px}
+.container.single{grid-template-columns:1fr}
 .card{background:#101826;border:1px solid var(--line);border-radius:18px;padding:14px}
 input,select,button{width:100%;padding:10px;border-radius:12px;border:1px solid #243043;background:#0c1424;color:var(--ink);margin:6px 0}
 button{cursor:pointer;background:linear-gradient(135deg,var(--ok),var(--ok2));border:none;font-weight:700}
@@ -35,6 +36,7 @@ thead th{background:#0c1424}
 .stat b{font-size:18px}
 .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .badge{padding:2px 8px;border:1px solid #2a3a51;border-radius:999px;font-size:12px}
+.small{font-size:12px;opacity:.8}
 </style>
 </head>
 <body>
@@ -116,8 +118,34 @@ thead th{background:#0c1424}
   </div>
 </div>
 
-<!-- تقرير -->
-<div class="container" style="grid-template-columns:1fr;">
+<!-- سجل المسار التاريخي -->
+<div class="container single">
+  <div class="card">
+    <h3>سجل المسار التاريخي (تشغيل/إيقاف + تصدير)</h3>
+    <div class="row">
+      <label>الباص:
+        <select id="h_bus"></select>
+      </label>
+      <label>من (تاريخ/وقت):
+        <input id="h_from" type="datetime-local"/>
+      </label>
+      <label>إلى (تاريخ/وقت):
+        <input id="h_to" type="datetime-local"/>
+      </label>
+    </div>
+    <div class="row">
+      <button onclick="loadHistorical()">عرض المسار</button>
+      <button class="ghost" onclick="togglePlayback()" id="playBtn" disabled>▶ تشغيل</button>
+      <button class="ghost" onclick="clearHistorical()">مسح المسار</button>
+      <button class="ghost" onclick="exportGPX()" id="gpxBtn" disabled>تصدير GPX</button>
+      <button class="ghost" onclick="exportCSV()" id="csvBtn" disabled>تصدير CSV</button>
+    </div>
+    <div class="small">النصائح: اختر نافذة زمنية دقيقة (مثلاً وقت تشغيل تتبّع الملاحظ) لعرض خط سيره تمامًا، ويمكن تشغيل المؤشر لمتابعة الحركة لحظيًا ضمن الفترة.</div>
+  </div>
+</div>
+
+<!-- تقرير الحضور -->
+<div class="container single">
   <div class="card">
     <h3>تقرير الحضور</h3>
     <div class="row">
@@ -236,6 +264,7 @@ async function linkStudent(){
   if(error) return alert(error.message);
   alert('تم تخصيص الطالب للباص');
 }
+
 let busMeta=new Map();
 async function loadOptions(){
   const { data: obs }   = await client.from('profiles').select('id, full_name').eq('role','observer').order('full_name');
@@ -249,6 +278,7 @@ async function loadOptions(){
 
   q('#map_bus').innerHTML = `<option value="">عرض جميع الباصات</option>` + (buses||[]).map(b=>`<option value="${b.id}">${b.school_bus_no}</option>`).join('');
   q('#r_bus').innerHTML = `<option value="">اختر الباص…</option>` + (buses||[]).map(b=>`<option value="${b.id}">${b.school_bus_no}</option>`).join('');
+  q('#h_bus').innerHTML = `<option value="">اختر الباص…</option>` + (buses||[]).map(b=>`<option value="${b.id}">${b.school_bus_no}</option>`).join('');
 
   busMeta.clear(); (buses||[]).forEach(b=>busMeta.set(b.id,{no:b.school_bus_no, plate:b.plate_no, observer_id:b.observer_id}));
 }
@@ -282,16 +312,14 @@ function initMap(){
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(map);
   studentLayer.addTo(map);
 }
-
 function refreshMap(){
   const val = q('#map_bus').value;
   selectedBusId = val ? Number(val) : null;
   drawLive();
-  // إعادة الاشتراك بالفلتر الجديد
   subscribeRealtime();
 }
 
-/* رسم مسارات آخر 12 ساعة، وإلا آخر نقطة لكل باص */
+/* مسارات آخر 12 ساعة + fallback آخر نقطة */
 async function drawLive(){
   try{
     const since = new Date(Date.now() - 12*60*60*1000);
@@ -303,7 +331,6 @@ async function drawLive(){
     const { data: tracks, error } = await qTracks;
     if(error){ console.log(error); return; }
 
-    // تنظيف
     busMarkers.forEach(m=>map.removeLayer(m)); busMarkers.clear();
     polylines.forEach(pl=>map.removeLayer(pl)); polylines.clear();
 
@@ -323,11 +350,9 @@ async function drawLive(){
       });
       if(selectedBusId && byBus.has(selectedBusId)){
         const arr = byBus.get(selectedBusId).map(p=>[p.lat,p.lng]);
-        const bounds = L.latLngBounds(arr);
-        map.fitBounds(bounds,{padding:[30,30]});
+        map.fitBounds(L.latLngBounds(arr),{padding:[30,30]});
       }
     }else{
-      // fallback: آخر نقطة لكل باص
       let lastQ = client.from('gps_tracks')
         .select('bus_id, lat, lng, recorded_at')
         .order('recorded_at',{ascending:false});
@@ -347,28 +372,21 @@ async function drawLive(){
         if(selectedBusId && latestPerBus.length){ map.setView([latestPerBus[0].lat, latestPerBus[0].lng], 13); }
       }
     }
-
-    // نقاط الطلاب (اختياري)
     await drawStudentPoints();
   }catch(e){ console.log(e); }
 }
 
-/* طبقة نقاط الطلاب */
+/* نقاط الطلاب اختيارية */
 async function drawStudentPoints(){
   studentLayer.clearLayers();
   const show = document.getElementById('toggle_students')?.checked;
   if(!show) return;
-  let query = client
-    .from('student_bus')
-    .select('bus_id, students(full_name, home_lat, home_lng)');
+  let query = client.from('student_bus').select('bus_id, students(full_name, home_lat, home_lng)');
   if(selectedBusId) query = query.eq('bus_id', selectedBusId);
-
   const { data, error } = await query;
   if(error){ console.log(error); return; }
-
-  (data||[])
-    .map(r => ({ bus_id: r.bus_id, ...r.students }))
-    .filter(s => s && typeof s.home_lat === 'number' && typeof s.home_lng === 'number')
+  (data||[]).map(r=>({bus_id:r.bus_id, ...r.students}))
+    .filter(s=>s && typeof s.home_lat==='number' && typeof s.home_lng==='number')
     .forEach(s=>{
       const m = L.circleMarker([s.home_lat, s.home_lng], { radius:6, opacity:0.9 })
         .bindTooltip(`👤 ${s.full_name}`, {direction:'top'})
@@ -377,52 +395,120 @@ async function drawStudentPoints(){
     });
 }
 
-/* ===== Realtime: تحريك المؤشر لحظيًا ===== */
+/* Realtime */
 function subscribeRealtime(){
-  // أغلق قناة سابقة إن وجدت
   if(liveChannel){ client.removeChannel(liveChannel); liveChannel=null; }
-
-  // فلتر اختياري على bus_id
   const filter = selectedBusId ? `bus_id=eq.${selectedBusId}` : '*';
-
   liveChannel = client.channel('gps_stream')
-    .on('postgres_changes', {
-      event: 'INSERT',
-      schema: 'public',
-      table: 'gps_tracks',
-      filter // يعمل فقط إذا كان replication مفعّل لهذا الجدول
-    }, (payload) => {
-      const row = payload.new;
-      const bid = row.bus_id;
-      // لو نعرض باصًا محددًا وتلقينا غيره، تجاهل
-      if(selectedBusId && bid !== selectedBusId) return;
-
-      // حدّث أو أنشئ بوليلاين ومؤشر
-      const ll = [row.lat, row.lng];
-
-      // polyline
-      let pl = polylines.get(bid);
-      if(pl){ pl.addLatLng(ll); }
-      else{
-        pl = L.polyline([ll],{weight:4,opacity:.9}).addTo(map);
-        polylines.set(bid, pl);
-      }
-
-      // marker
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'gps_tracks', filter }, (payload) => {
+      const row = payload.new; const bid = row.bus_id; const ll=[row.lat,row.lng];
+      if(selectedBusId && bid!==selectedBusId) return;
+      let pl = polylines.get(bid); if(pl){ pl.addLatLng(ll); } else { pl = L.polyline([ll],{weight:4,opacity:.9}).addTo(map); polylines.set(bid,pl); }
       const label = busMeta.get(bid)?.no ? `Bus ${busMeta.get(bid).no}` : `Bus #${bid}`;
-      let mk = busMarkers.get(bid);
-      if(mk){ mk.setLatLng(ll); }
-      else{
-        mk = L.marker(ll).addTo(map).bindTooltip(label).openTooltip();
-        busMarkers.set(bid, mk);
-      }
+      let mk = busMarkers.get(bid); if(mk){ mk.setLatLng(ll); } else { mk = L.marker(ll).addTo(map).bindTooltip(label).openTooltip(); busMarkers.set(bid,mk); }
     })
-    .subscribe(status => {
-      // console.log('Realtime status:', status);
-    });
+    .subscribe();
 }
 
-/* ===== تقرير ===== */
+/* ===== سجل المسار التاريخي ===== */
+let histLayer = L.layerGroup(); // طبقة تاريخية مستقلة
+let histPolyline = null;
+let histStartMarker = null;
+let histEndMarker = null;
+let histPoints = []; // [{lat,lng,ts}]
+let histTimer = null;
+let histIdx = 0;
+function ensureHistLayer(){ if(!map.hasLayer(histLayer)) histLayer.addTo(map); }
+
+async function loadHistorical(){
+  const busId = +q('#h_bus').value || null;
+  const from = q('#h_from').value; const to = q('#h_to').value;
+  if(!busId) return alert('اختر الباص');
+  if(!from || !to) return alert('حدد من/إلى (تاريخ/وقت)');
+
+  ensureHistLayer();
+  clearHistorical(); // امسح السابق لكن أبقِ الطبقة
+
+  // جلب النقاط ضمن النطاق
+  const { data, error } = await client.from('gps_tracks')
+    .select('lat,lng,recorded_at')
+    .eq('bus_id', busId)
+    .gte('recorded_at', new Date(from).toISOString())
+    .lte('recorded_at', new Date(to).toISOString())
+    .order('recorded_at',{ascending:true});
+  if(error){ alert(error.message); return; }
+  if(!data?.length){ alert('لا توجد نقاط ضمن الفترة المحددة.'); disableHistActions(); return; }
+
+  // إعداد النقاط والطبقات
+  histPoints = data.map(r=>({lat:r.lat, lng:r.lng, ts:new Date(r.recorded_at)}));
+  histPolyline = L.polyline(histPoints.map(p=>[p.lat,p.lng]), { weight:5, opacity:.9 }).addTo(histLayer);
+  histStartMarker = L.marker([histPoints[0].lat,histPoints[0].lng]).addTo(histLayer).bindTooltip('بداية المسار: '+histPoints[0].ts.toLocaleString());
+  histEndMarker   = L.marker([histPoints.at(-1).lat,histPoints.at(-1).lng]).addTo(histLayer).bindTooltip('نهاية المسار: '+histPoints.at(-1).ts.toLocaleString());
+  map.fitBounds(histPolyline.getBounds(), { padding:[30,30] });
+
+  // فعّل الأزرار
+  q('#playBtn').disabled=false; q('#gpxBtn').disabled=false; q('#csvBtn').disabled=false;
+  q('#playBtn').textContent='▶ تشغيل';
+  histIdx = 0;
+}
+
+function clearHistorical(){
+  if(histTimer){ clearInterval(histTimer); histTimer=null; }
+  if(histPolyline){ histLayer.removeLayer(histPolyline); histPolyline=null; }
+  if(histStartMarker){ histLayer.removeLayer(histStartMarker); histStartMarker=null; }
+  if(histEndMarker){ histLayer.removeLayer(histEndMarker); histEndMarker=null; }
+  // لا نفرغ histPoints حتى لا نفقد التصدير إن رغبت — لكن سنعطل الأزرار
+  disableHistActions();
+}
+function disableHistActions(){
+  q('#playBtn').disabled = (histPoints.length===0);
+  q('#gpxBtn').disabled  = (histPoints.length===0);
+  q('#csvBtn').disabled  = (histPoints.length===0);
+}
+
+let runnerMarker=null; // مؤشر التشغيل
+function togglePlayback(){
+  if(histPoints.length===0) return;
+  if(histTimer){ // إيقاف
+    clearInterval(histTimer); histTimer=null; q('#playBtn').textContent='▶ تشغيل'; return;
+  }
+  // بدء التشغيل
+  q('#playBtn').textContent='⏸ إيقاف مؤقت';
+  if(!runnerMarker){
+    runnerMarker = L.marker([histPoints[0].lat,histPoints[0].lng]).addTo(histLayer);
+  }
+  histIdx = Math.max(0, Math.min(histIdx, histPoints.length-1));
+  histTimer = setInterval(()=>{
+    const p = histPoints[histIdx];
+    runnerMarker.setLatLng([p.lat,p.lng]).bindTooltip(p.ts.toLocaleString()).openTooltip();
+    histIdx++;
+    if(histIdx >= histPoints.length){ // انتهى
+      clearInterval(histTimer); histTimer=null; q('#playBtn').textContent='▶ تشغيل';
+    }
+  }, 500); // سرعة التشغيل (نقطة كل 0.5 ثانية) — يمكنك تعديلها
+}
+
+/* تصدير GPX */
+function exportGPX(){
+  if(histPoints.length===0) return;
+  const gpxHeader = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="FMS" xmlns="http://www.topografix.com/GPX/1/1">
+<trk><name>Bus Track</name><trkseg>`;
+  const gpxBody = histPoints.map(p=>`<trkpt lat="${p.lat}" lon="${p.lng}"><time>${p.ts.toISOString()}</time></trkpt>`).join('\n');
+  const gpxFooter = `</trkseg></trk></gpx>`;
+  const blob = new Blob([gpxHeader+'\n'+gpxBody+'\n'+gpxFooter], {type:'application/gpx+xml;charset=utf-8;'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='bus_track.gpx'; a.click();
+}
+
+/* تصدير CSV */
+function exportCSV(){
+  if(histPoints.length===0) return;
+  const rows = ['lat,lng,recorded_at'].concat(histPoints.map(p=>`${p.lat},${p.lng},${p.ts.toISOString()}`));
+  const blob = new Blob([rows.join('\n')], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='bus_track.csv'; a.click();
+}
+
+/* ===== تقرير الحضور ===== */
 const infoBusNo=q('#info_bus_no'), infoPlate=q('#info_plate'), infoObserver=q('#info_observer'),
       infoDate=q('#info_date'), infoPeriod=q('#info_period'),
       countBoard=q('#count_board'), countAlight=q('#count_alight'),
@@ -479,18 +565,25 @@ function downloadCSV(){
   const blob = new Blob([`\uFEFF${csv.join('\n')}`], {type:'text/csv;charset=utf-8;'});
   const a = document.createElement('a'); const d = (q('#r_date').value || new Date().toISOString().slice(0,10));
   const p = q('#r_period').value==='morning'?'صباحي':'مسائي';
-  a.href = URL.createObjectURL(blob); a.download = `تقرير_${infoBusNo.textContent||'باص'}_${p}_${d}.csv`; document.body.appendChild(a); a.click(); a.remove();
+  a.href = URL.createObjectURL(blob); a.download = `تقرير_${infoBusNo.textContent||'باص'}_${p}_${d}.csv`; a.click();
 }
 
 /* ===== Boot ===== */
 (async ()=>{
   await loadOptions();
   initMap();
-  await drawLive();        // تحميل أولي
+  await drawLive();
   await loadNotifications();
-  subscribeRealtime();     // اشتراك لحظي
-  setInterval(drawLive, 10000); // تزامن احتياطي كل 10 ثوان
+  subscribeRealtime();
+  setInterval(drawLive, 10000);
   q('#r_date').value = new Date().toISOString().slice(0,10);
+
+  // افتراض: الحقلين التاريخيين يملآن بشكل مبدئي لنطاق ساعتين مضت حتى الآن
+  const now = new Date();
+  const twoHrsAgo = new Date(now.getTime()-2*60*60*1000);
+  const toLocalInput = (d)=>{ const z=new Date(d.getTime()-d.getTimezoneOffset()*60000); return z.toISOString().slice(0,16); }
+  q('#h_from').value = toLocalInput(twoHrsAgo);
+  q('#h_to').value   = toLocalInput(now);
 })();
 </script>
 </body></html>
