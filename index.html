@@ -9,207 +9,1085 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f6f9fc;--card:#fff;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--ok:#10b981;--ok2:#0ea5e9;--danger:#ef4444;--warn:#f59e0b}
-*{box-sizing:border-box} body{margin:0;background:linear-gradient(140deg,#f0f4f8,#e2e8f0);color:var(--ink);font-family:"Tajawal",system-ui}
-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;background:#ffffffc2;backdrop-filter:blur(8px);position:sticky;top:0;z-index:6;border-bottom:1px solid var(--line)}
-.container{padding:16px;display:grid;grid-template-columns:380px 1fr;gap:16px;max-width:1600px;margin:0 auto}
-.container.single{grid-template-columns:1fr}
-.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 6px 24px rgba(0,0,0,.07)}
-h3{margin:0 0 10px;display:flex;gap:8px;align-items:center}
-.tabs{display:flex;gap:10px;margin-bottom:10px;border-bottom:1px solid var(--line);padding-bottom:10px}
-.tab{padding:8px 14px;border-radius:999px;border:1px solid var(--line);cursor:pointer;background:#f8fafc}
-.tab.active{background:linear-gradient(135deg,#e0f2fe,#d1fae5);font-weight:800}
-.mgmt{display:none}.mgmt.active{display:block}
-input,select,button{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#f8fafc;margin:6px 0;font-family:inherit}
-button{cursor:pointer;background:linear-gradient(135deg,var(--ok),var(--ok2));color:#fff;border:none;font-weight:800}
-button.ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
-button.danger{background:var(--danger)}
-button.warn{background:var(--warn);color:#111827}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.management-list{margin-top:10px;max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:12px}
-.management-item{display:flex;justify-content:space-between;gap:10px;padding:12px;border-bottom:1px solid var(--line)}
-.item-actions{display:flex;gap:8px}
-#map{height:520px;border-radius:16px;border:1px solid var(--line);overflow:hidden}
-.badge{display:inline-flex;gap:6px;align-items:center;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:#fff}
-.list{max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:12px}
-.notif{padding:12px;border-bottom:1px dashed var(--line);display:flex;justify-content:space-between;gap:8px}
-.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}
-table{width:100%;border-collapse:collapse} th,td{padding:10px;border-bottom:1px solid var(--line);text-align:right}
-.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.small{font-size:12px;color:var(--muted)}
-.modal{display:none;position:fixed;inset:0;background:#0006;z-index:50;align-items:center;justify-content:center}
-.modal-content{background:#fff;border-radius:18px;padding:18px;width:min(92vw,520px)}
-.modal-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:12px}
-.bus-icon{background:#3b82f6;color:#fff;border-radius:50%;width:38px;height:38px;border:3px solid #fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px #0002}
-.student-icon{background:#10b981;color:#fff;border-radius:50%;width:30px;height:30px;border:3px solid #fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px #0002}
-@media (max-width:1100px){.container{grid-template-columns:1fr}}
+:root {
+  --primary: #4361ee;
+  --primary-dark: #3a56d4;
+  --secondary: #7209b7;
+  --success: #06d6a0;
+  --info: #118ab2;
+  --warning: #ffd166;
+  --danger: #ef476f;
+  --dark: #1e293b;
+  --light: #f8fafc;
+  --gray: #64748b;
+  --gray-light: #e2e8f0;
+  --bg: #f1f5f9;
+  --card: #ffffff;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  
+  --radius: 16px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.12);
+  --transition: all 0.3s ease;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: linear-gradient(140deg, #f0f4f8, #e2e8f0);
+  color: var(--ink);
+  font-family: "Tajawal", system-ui;
+  line-height: 1.6;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: #ffffff;
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 800;
+  font-size: 1.2rem;
+  color: var(--primary);
+}
+
+.logo i {
+  font-size: 1.5rem;
+}
+
+nav .row {
+  display: flex;
+  gap: 12px;
+}
+
+.badge {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 8px 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--dark);
+  text-decoration: none;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.badge:hover {
+  background: var(--primary);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.container {
+  padding: 24px;
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 24px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.container.single {
+  grid-template-columns: 1fr;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-5px);
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+}
+
+h3 {
+  margin: 0 0 16px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: var(--dark);
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+h3 i {
+  color: var(--primary);
+}
+
+h4 {
+  margin: 20px 0 12px;
+  color: var(--dark);
+  font-weight: 600;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+h4 i {
+  color: var(--primary);
+  font-size: 0.9rem;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 12px;
+}
+
+.tab {
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  background: #f8fafc;
+  font-weight: 500;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tab:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.tab.active {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  font-weight: 700;
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+}
+
+.mgmt {
+  display: none;
+}
+
+.mgmt.active {
+  display: block;
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+input, select, button {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: #f8fafc;
+  margin: 8px 0;
+  font-family: inherit;
+  transition: var(--transition);
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+}
+
+button {
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff;
+  border: none;
+  font-weight: 700;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(67, 97, 238, 0.4);
+}
+
+button.ghost {
+  background: #fff;
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+button.ghost:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+button.danger {
+  background: var(--danger);
+}
+
+button.danger:hover {
+  background: #d1365c;
+  box-shadow: 0 6px 16px rgba(239, 71, 111, 0.4);
+}
+
+button.warn {
+  background: var(--warning);
+  color: #111827;
+}
+
+button.warn:hover {
+  background: #f7c652;
+  box-shadow: 0 6px 16px rgba(255, 209, 102, 0.4);
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.management-list {
+  margin-top: 16px;
+  max-height: 320px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.management-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--line);
+  transition: var(--transition);
+}
+
+.management-item:hover {
+  background: #f8fafc;
+}
+
+.management-item:last-child {
+  border-bottom: none;
+}
+
+.item-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.item-actions button {
+  width: auto;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+}
+
+#map {
+  height: 520px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.badge {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 0.85rem;
+}
+
+.list {
+  max-height: 220px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.notif {
+  padding: 14px;
+  border-bottom: 1px dashed var(--line);
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  transition: var(--transition);
+}
+
+.notif:hover {
+  background: #f8fafc;
+}
+
+.table-wrap {
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  margin-top: 16px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 12px;
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+}
+
+th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+tr:hover {
+  background: #f8fafc;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.small {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 24px;
+  width: min(92vw, 520px);
+  box-shadow: var(--shadow-lg);
+  animation: slideUp 0.4s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.bus-icon {
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  border: 3px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.student-icon {
+  background: var(--success);
+  color: #fff;
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  border: 3px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.controls-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  background: #fff;
+  margin-bottom: 16px;
+}
+
+.controls-panel label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.report-header {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.report-stats {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+
+.stat-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: #f8fafc;
+  min-width: 80px;
+}
+
+.stat-badge .count {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.stat-badge .label {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.timeline-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  background: #fff;
+  margin-top: 16px;
+}
+
+.timeline-slider {
+  flex: 1;
+  min-width: 240px;
+}
+
+.timeline-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* إشعارات منبثقة */
+.notification-toast {
+  position: fixed;
+  top: 100px;
+  left: 24px;
+  right: 24px;
+  max-width: 400px;
+  margin: 0 auto;
+  background: white;
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow-lg);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-right: 4px solid var(--primary);
+  animation: slideInRight 0.5s ease, fadeOut 0.5s ease 9.5s forwards;
+  transform: translateX(0);
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; visibility: hidden; }
+}
+
+.notification-toast.success {
+  border-right-color: var(--success);
+}
+
+.notification-toast.warning {
+  border-right-color: var(--warning);
+}
+
+.notification-toast.danger {
+  border-right-color: var(--danger);
+}
+
+.notification-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.notification-toast.success .notification-icon {
+  background: rgba(6, 214, 160, 0.1);
+  color: var(--success);
+}
+
+.notification-toast.warning .notification-icon {
+  background: rgba(255, 209, 102, 0.1);
+  color: var(--warning);
+}
+
+.notification-toast.danger .notification-icon {
+  background: rgba(239, 71, 111, 0.1);
+  color: var(--danger);
+}
+
+.notification-toast.default .notification-icon {
+  background: rgba(67, 97, 238, 0.1);
+  color: var(--primary);
+}
+
+.notification-content {
+  flex: 1;
+}
+
+.notification-title {
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--dark);
+}
+
+.notification-body {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.notification-close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 1.2rem;
+  width: auto;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notification-close:hover {
+  color: var(--dark);
+  background: none;
+  transform: none;
+  box-shadow: none;
+}
+
+/* تحسينات للتقويم */
+input[type="date"], input[type="datetime-local"] {
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='16' y1='2' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='2' x2='8' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='10' x2='21' y2='10'%3E%3C/line%3E%3C/svg%3E") no-repeat left 12px center;
+  padding-left: 40px;
+}
+
+input[type="date"]:focus, input[type="datetime-local"]:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234361ee' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='16' y1='2' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='2' x2='8' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='10' x2='21' y2='10'%3E%3C/line%3E%3C/svg%3E");
+}
+
+/* تحسينات للخريطة */
+.map-container {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.map-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.map-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* تحسينات للتبويبات الرئيسية */
+.main-tabs {
+  display: flex;
+  gap: 4px;
+  background: #f8fafc;
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  margin-bottom: 24px;
+}
+
+.main-tab {
+  padding: 12px 20px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 500;
+  transition: var(--transition);
+  text-align: center;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.main-tab.active {
+  background: white;
+  color: var(--primary);
+  box-shadow: var(--shadow);
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+  animation: fadeIn 0.5s ease;
+}
+
+@media (max-width: 1100px) {
+  .container {
+    grid-template-columns: 1fr;
+  }
+  
+  .grid-3 {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .report-header {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+  
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+  
+  .report-header {
+    grid-template-columns: 1fr;
+  }
+  
+  .map-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .map-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .controls-panel {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .main-tabs {
+    flex-direction: column;
+  }
+}
 </style>
 </head>
 <body>
 <header>
-  <div><i class="fa-solid fa-bus"></i> نظام النقل – لوحة المشرف</div>
-  <nav class="row">
-    <a class="badge" href="observer.html"><i class="fa-solid fa-user-tie"></i> الملاحظ</a>
+  <div class="logo">
+    <i class="fa-solid fa-bus"></i>
+    <span>نظام النقل – لوحة المشرف</span>
+  </div>
+  <nav>
+    <div class="row">
+      <a class="badge" href="observer.html">
+        <i class="fa-solid fa-user-tie"></i> 
+        <span>الملاحظ</span>
+      </a>
+    </div>
   </nav>
 </header>
 
-<div class="container">
-  <!-- إدارة البيانات -->
-  <div class="card">
-    <h3><i class="fa-solid fa-gear"></i> إدارة البيانات</h3>
-
-    <div class="tabs">
-      <div class="tab active" data-tab="mg-buses"><i class="fa-solid fa-bus"></i> الباصات</div>
-      <div class="tab" data-tab="mg-observers"><i class="fa-solid fa-user-tie"></i> الملاحظون</div>
-      <div class="tab" data-tab="mg-students"><i class="fa-solid fa-user-graduate"></i> الطلاب</div>
-    </div>
-
-    <!-- الباصات -->
-    <div id="mg-buses" class="mgmt active">
-      <h4>إضافة باص</h4>
-      <input id="bus_no" placeholder="رقم الباص"/>
-      <input id="plate_no" placeholder="رقم اللوحة"/>
-      <input id="capacity" type="number" placeholder="السعة (اختياري)"/>
-      <button onclick="createBus()">إضافة باص</button>
-
-      <h4>ربط باص بملاحظ</h4>
-      <div class="row"><select id="bus_select"></select><select id="observer_select"></select></div>
-      <button onclick="assignBus()">ربط</button>
-
-      <h4>الباصات المسجلة</h4>
-      <div id="buses_list" class="management-list"></div>
-    </div>
-
-    <!-- الملاحظون -->
-    <div id="mg-observers" class="mgmt">
-      <h4>إضافة ملاحظ جديد</h4>
-      <input id="obs_name" placeholder="اسم الملاحظ"/>
-      <input id="obs_phone" placeholder="رقم الهاتف (اسم المستخدم)"/>
-      <input id="obs_password" placeholder="كلمة المرور" type="password"/>
-      <select id="obs_bus"><option value="">اختر الباص المخصص (اختياري)</option></select>
-      <button onclick="createObserverAccount()">إنشاء حساب ملاحظ</button>
-
-      <h4>حسابات الملاحظين</h4>
-      <div id="observers_accounts_list" class="management-list"></div>
-    </div>
-
-    <!-- الطلاب -->
-    <div id="mg-students" class="mgmt">
-      <h4>إضافة طالب</h4>
-      <input id="stu_name" placeholder="اسم الطالب"/>
-      <div class="row"><input id="stu_grade" placeholder="الصف"/><input id="stu_section" placeholder="الشعبة"/></div>
-      <input id="home_point" placeholder="إحداثي واحد: 25.285,51.531 أو رابط خرائط Google"/>
-      <div class="small">نقبل lat,lng أو رابط يحوي ‎@lat,lng‎ أو ‎?q=lat,lng‎</div>
-      <button onclick="createStudent()">إضافة طالب</button>
-
-      <h4>تخصيص الطالب للباص</h4>
-      <div class="row"><select id="stu_select"></select><select id="bus_select2"></select></div>
-      <button onclick="linkStudent()">تخصيص</button>
-
-      <h4>الطلاب المسجلون</h4>
-      <div id="students_list" class="management-list"></div>
-    </div>
-
-    <hr/>
-    <h4><i class="fa-solid fa-bell"></i> الإشعارات</h4>
-    <div class="row">
-      <button class="ghost" onclick="loadNotifications()">تحديث الإشعارات</button>
-      <button class="danger" onclick="clearNotificationsDB()">حذف جميع الإشعارات</button>
-    </div>
-    <div id="notif" class="list"></div>
+<div class="main-tabs">
+  <div class="main-tab active" data-tab="dashboard">
+    <i class="fa-solid fa-gauge-high"></i>
+    <span>لوحة التحكم</span>
   </div>
+  <div class="main-tab" data-tab="reports">
+    <i class="fa-solid fa-chart-bar"></i>
+    <span>التقارير</span>
+  </div>
+</div>
 
-  <!-- خريطة -->
-  <div class="card">
-    <div class="row" style="justify-content:space-between">
-      <h3><i class="fa-solid fa-map-location-dot"></i> الخريطة الحية <span class="badge">Realtime + كل 10 ثوان</span></h3>
-      <div class="row">
-        <label>فلتر:
-          <select id="map_bus"><option value="">عرض جميع الباصات</option></select>
-        </label>
-        <label class="row" style="align-items:center;gap:6px">
-          <input id="toggle_students" type="checkbox" onchange="drawLive()"> إظهار نقاط الطلاب
-        </label>
-        <button onclick="refreshMap()">عرض</button>
-        <button class="ghost" onclick="drawLive()">تحديث الخريطة</button>
-      </div>
-    </div>
+<div class="tab-content active" id="dashboard">
+  <div class="container">
+    <!-- إدارة البيانات -->
+    <div class="card">
+      <h3><i class="fa-solid fa-gear"></i> إدارة البيانات</h3>
 
-    <!-- سجل المسار أعلى الخريطة -->
-    <div class="row" style="flex-wrap:wrap;align-items:center;gap:12px;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff">
-      <b><i class="fa-solid fa-history"></i> سجل المسار التاريخي</b>
-      <label>الباص: <select id="h_bus"></select></label>
-      <label>من: <input id="h_from" type="datetime-local"></label>
-      <label>إلى: <input id="h_to" type="datetime-local"></label>
-      <button onclick="loadHistorical()">عرض المسار</button>
-      <button class="ghost" onclick="showCurrentLocation()">الموقع الحالي</button>
-    </div>
-
-    <div id="map"></div>
-
-    <div class="row" style="margin-top:10px;flex-wrap:wrap;align-items:center;gap:12px;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff">
-      <div class="row" style="gap:8px">
-        <button id="playBtn" class="ghost" onclick="togglePlayback()" disabled>▶ تشغيل</button>
-        <button class="ghost" onclick="clearHistorical()">مسح</button>
-        <button class="ghost" id="gpxBtn" onclick="exportGPX()" disabled>تصدير GPX</button>
-        <button class="ghost" id="csvBtn" onclick="exportCSV()" disabled>تصدير CSV</button>
-      </div>
-      <div style="flex:1;min-width:240px">
-        <input id="timeline" type="range" min="0" max="100" step="1" value="0">
-        <div class="row" style="justify-content:space-between" class="small">
-          <div id="tl_from" class="small">—</div>
-          <div id="tl_now" class="small">—</div>
-          <div id="tl_to" class="small">—</div>
+      <div class="tabs">
+        <div class="tab active" data-tab="mg-buses">
+          <i class="fa-solid fa-bus"></i> 
+          <span>الباصات</span>
+        </div>
+        <div class="tab" data-tab="mg-observers">
+          <i class="fa-solid fa-user-tie"></i> 
+          <span>الملاحظون</span>
+        </div>
+        <div class="tab" data-tab="mg-students">
+          <i class="fa-solid fa-user-graduate"></i> 
+          <span>الطلاب</span>
         </div>
       </div>
-      <label>السرعة/الخطوة:
-        <select id="speedSel">
-          <option value="10">10 ثوانٍ</option>
-          <option value="20">20 ثانية</option>
-          <option value="60" selected>1 دقيقة</option>
-          <option value="300">5 دقائق</option>
+
+      <!-- الباصات -->
+      <div id="mg-buses" class="mgmt active">
+        <h4><i class="fa-solid fa-plus"></i> إضافة باص</h4>
+        <input id="bus_no" placeholder="رقم الباص"/>
+        <input id="plate_no" placeholder="رقم اللوحة"/>
+        <input id="capacity" type="number" placeholder="السعة (اختياري)"/>
+        <button onclick="createBus()">
+          <i class="fa-solid fa-plus"></i>
+          إضافة باص
+        </button>
+
+        <h4><i class="fa-solid fa-link"></i> ربط باص بملاحظ</h4>
+        <div class="row">
+          <select id="bus_select"></select>
+          <select id="observer_select"></select>
+        </div>
+        <button onclick="assignBus()">
+          <i class="fa-solid fa-link"></i>
+          ربط
+        </button>
+
+        <h4><i class="fa-solid fa-list"></i> الباصات المسجلة</h4>
+        <div id="buses_list" class="management-list"></div>
+      </div>
+
+      <!-- الملاحظون -->
+      <div id="mg-observers" class="mgmt">
+        <h4><i class="fa-solid fa-user-plus"></i> إضافة ملاحظ جديد</h4>
+        <input id="obs_name" placeholder="اسم الملاحظ"/>
+        <input id="obs_phone" placeholder="رقم الهاتف (اسم المستخدم)"/>
+        <input id="obs_password" placeholder="كلمة المرور" type="password"/>
+        <select id="obs_bus">
+          <option value="">اختر الباص المخصص (اختياري)</option>
         </select>
-      </label>
+        <button onclick="createObserverAccount()">
+          <i class="fa-solid fa-user-plus"></i>
+          إنشاء حساب ملاحظ
+        </button>
+
+        <h4><i class="fa-solid fa-users"></i> حسابات الملاحظين</h4>
+        <div id="observers_accounts_list" class="management-list"></div>
+      </div>
+
+      <!-- الطلاب -->
+      <div id="mg-students" class="mgmt">
+        <h4><i class="fa-solid fa-user-plus"></i> إضافة طالب</h4>
+        <input id="stu_name" placeholder="اسم الطالب"/>
+        <div class="row">
+          <input id="stu_grade" placeholder="الصف"/>
+          <input id="stu_section" placeholder="الشعبة"/>
+        </div>
+        <input id="home_point" placeholder="إحداثي واحد: 25.285,51.531 أو رابط خرائط Google"/>
+        <div class="small">نقبل lat,lng أو رابط يحوي ‎@lat,lng‎ أو ‎?q=lat,lng‎</div>
+        <button onclick="createStudent()">
+          <i class="fa-solid fa-user-plus"></i>
+          إضافة طالب
+        </button>
+
+        <h4><i class="fa-solid fa-link"></i> تخصيص الطالب للباص</h4>
+        <div class="row">
+          <select id="stu_select"></select>
+          <select id="bus_select2"></select>
+        </div>
+        <button onclick="linkStudent()">
+          <i class="fa-solid fa-link"></i>
+          تخصيص
+        </button>
+
+        <h4><i class="fa-solid fa-users"></i> الطلاب المسجلون</h4>
+        <div id="students_list" class="management-list"></div>
+      </div>
+
+      <hr/>
+      <h4><i class="fa-solid fa-bell"></i> الإشعارات</h4>
+      <div class="row">
+        <button class="ghost" onclick="loadNotifications()">
+          <i class="fa-solid fa-rotate"></i>
+          تحديث الإشعارات
+        </button>
+        <button class="danger" onclick="clearNotificationsDB()">
+          <i class="fa-solid fa-trash"></i>
+          حذف جميع الإشعارات
+        </button>
+      </div>
+      <div id="notif" class="list"></div>
+    </div>
+
+    <!-- خريطة -->
+    <div class="card">
+      <div class="map-header">
+        <h3>
+          <i class="fa-solid fa-map-location-dot"></i> 
+          الخريطة الحية 
+          <span class="badge">Realtime + كل 10 ثوان</span>
+        </h3>
+        <div class="map-controls">
+          <label>
+            فلتر:
+            <select id="map_bus">
+              <option value="">عرض جميع الباصات</option>
+            </select>
+          </label>
+          <label class="row">
+            <input id="toggle_students" type="checkbox" onchange="drawLive()">
+            <span>إظهار نقاط الطلاب</span>
+          </label>
+          <button onclick="refreshMap()">عرض</button>
+          <button class="ghost" onclick="drawLive()">
+            <i class="fa-solid fa-rotate"></i>
+            تحديث الخريطة
+          </button>
+        </div>
+      </div>
+
+      <!-- سجل المسار أعلى الخريطة -->
+      <div class="controls-panel">
+        <b><i class="fa-solid fa-history"></i> سجل المسار التاريخي</b>
+        <label>الباص: 
+          <select id="h_bus"></select>
+        </label>
+        <label>من: 
+          <input id="h_from" type="datetime-local">
+        </label>
+        <label>إلى: 
+          <input id="h_to" type="datetime-local">
+        </label>
+        <button onclick="loadHistorical()">عرض المسار</button>
+        <button class="ghost" onclick="showCurrentLocation()">الموقع الحالي</button>
+      </div>
+
+      <div class="map-container">
+        <div id="map"></div>
+      </div>
+
+      <div class="timeline-container">
+        <div class="row">
+          <button id="playBtn" class="ghost" onclick="togglePlayback()" disabled>
+            <i class="fa-solid fa-play"></i>
+            تشغيل
+          </button>
+          <button class="ghost" onclick="clearHistorical()">
+            <i class="fa-solid fa-trash"></i>
+            مسح
+          </button>
+          <button class="ghost" id="gpxBtn" onclick="exportGPX()" disabled>
+            <i class="fa-solid fa-download"></i>
+            تصدير GPX
+          </button>
+          <button class="ghost" id="csvBtn" onclick="exportCSV()" disabled>
+            <i class="fa-solid fa-download"></i>
+            تصدير CSV
+          </button>
+        </div>
+        <div class="timeline-slider">
+          <input id="timeline" type="range" min="0" max="100" step="1" value="0">
+          <div class="timeline-labels">
+            <div id="tl_from" class="small">—</div>
+            <div id="tl_now" class="small">—</div>
+            <div id="tl_to" class="small">—</div>
+          </div>
+        </div>
+        <label>السرعة/الخطوة:
+          <select id="speedSel">
+            <option value="10">10 ثوانٍ</option>
+            <option value="20">20 ثانية</option>
+            <option value="60" selected>1 دقيقة</option>
+            <option value="300">5 دقائق</option>
+          </select>
+        </label>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- تقرير الحضور -->
-<div class="container single">
-  <div class="card">
-    <h3><i class="fa-solid fa-chart-bar"></i> تقرير الحضور</h3>
-    <div class="row">
-      <label>الباص: <select id="r_bus"></select></label>
-      <label>الفترة: 
-        <select id="r_period"><option value="morning">صباحي</option><option value="evening">مسائي</option></select>
-      </label>
-      <label>التاريخ: <input id="r_date" type="date"></label>
-      <button onclick="buildReport()">تحديث</button>
-      <button class="ghost" onclick="printReport()">طباعة</button>
-      <button class="ghost" onclick="downloadCSV()">تنزيل CSV</button>
-    </div>
-    <hr/>
-    <div class="grid-3">
-      <div><div class="small">رقم الباص</div><b id="info_bus_no">-</b></div>
-      <div><div class="small">رقم اللوحة</div><b id="info_plate">-</b></div>
-      <div><div class="small">اسم الملاحظ</div><b id="info_observer">-</b></div>
-    </div>
-    <div class="grid-3" style="margin-top:8px">
-      <div><div class="small">التاريخ</div><b id="info_date">-</b></div>
-      <div><div class="small">الفترة</div><b id="info_period">-</b></div>
-      <div class="row" style="gap:10px;flex-wrap:wrap">
-        <div class="badge">صعود: <b id="count_board">0</b></div>
-        <div class="badge">نزول: <b id="count_alight">0</b></div>
-        <div class="badge">غائب: <b id="count_absent">0</b></div>
-        <div class="badge">المجموع: <b id="count_total">0</b></div>
+<div class="tab-content" id="reports">
+  <div class="container single">
+    <div class="card">
+      <h3><i class="fa-solid fa-chart-bar"></i> تقرير الحضور</h3>
+      <div class="controls-panel">
+        <label>الباص: 
+          <select id="r_bus"></select>
+        </label>
+        <label>الفترة: 
+          <select id="r_period">
+            <option value="morning">صباحي</option>
+            <option value="evening">مسائي</option>
+          </select>
+        </label>
+        <label>التاريخ: 
+          <input id="r_date" type="date">
+        </label>
+        <button onclick="buildReport()">
+          <i class="fa-solid fa-rotate"></i>
+          تحديث
+        </button>
+        <button class="ghost" onclick="printReport()">
+          <i class="fa-solid fa-print"></i>
+          طباعة
+        </button>
+        <button class="ghost" onclick="downloadCSV()">
+          <i class="fa-solid fa-download"></i>
+          تنزيل CSV
+        </button>
       </div>
-    </div>
-    <div class="table-wrap" style="margin-top:12px">
-      <table id="report_table">
-        <thead><tr><th style="width:60px">#</th><th>اسم الطالب</th><th style="width:200px">التاريخ/الوقت</th><th style="width:120px">الحدث</th><th style="width:100px">الفترة</th></tr></thead>
-        <tbody id="report_body"><tr><td colspan="5" class="small" style="text-align:center">لا توجد بيانات…</td></tr></tbody>
-      </table>
+      
+      <div class="report-header">
+        <div class="stat-badge">
+          <div class="count" id="info_bus_no">-</div>
+          <div class="label">رقم الباص</div>
+        </div>
+        <div class="stat-badge">
+          <div class="count" id="info_plate">-</div>
+          <div class="label">رقم اللوحة</div>
+        </div>
+        <div class="stat-badge">
+          <div class="count" id="info_observer">-</div>
+          <div class="label">اسم الملاحظ</div>
+        </div>
+      </div>
+      
+      <div class="report-header">
+        <div class="stat-badge">
+          <div class="count" id="info_date">-</div>
+          <div class="label">التاريخ</div>
+        </div>
+        <div class="stat-badge">
+          <div class="count" id="info_period">-</div>
+          <div class="label">الفترة</div>
+        </div>
+        <div class="stat-badge">
+          <div class="count" id="count_total">0</div>
+          <div class="label">المجموع</div>
+        </div>
+      </div>
+      
+      <div class="report-stats">
+        <div class="stat-badge">
+          <div class="count" id="count_board">0</div>
+          <div class="label">صعود</div>
+        </div>
+        <div class="stat-badge">
+          <div class="count" id="count_alight">0</div>
+          <div class="label">نزول</div>
+        </div>
+        <div class="stat-badge">
+          <div class="count" id="count_absent">0</div>
+          <div class="label">غائب</div>
+        </div>
+      </div>
+      
+      <div class="table-wrap">
+        <table id="report_table">
+          <thead>
+            <tr>
+              <th style="width:60px">#</th>
+              <th>اسم الطالب</th>
+              <th style="width:200px">التاريخ/الوقت</th>
+              <th style="width:120px">الحدث</th>
+              <th style="width:100px">الفترة</th>
+            </tr>
+          </thead>
+          <tbody id="report_body">
+            <tr>
+              <td colspan="5" class="small" style="text-align:center">لا توجد بيانات…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
@@ -219,7 +1097,9 @@ table{width:100%;border-collapse:collapse} th,td{padding:10px;border-bottom:1px 
   <div class="modal-content">
     <div class="modal-header">
       <h3 id="modalTitle">تعديل</h3>
-      <button class="ghost" onclick="closeModal()" style="width:auto">✕</button>
+      <button class="ghost" onclick="closeModal()" style="width:auto">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
     </div>
     <div id="modalBody"></div>
   </div>
@@ -244,6 +1124,33 @@ function toArabicAction(a){ return a==='board'?'صعود': a==='alight'?'نزو�
 function toArabicPeriod(p){ return p==='morning'?'صباحي': p==='evening'?'مسائي': p; }
 function dayRangeISO(d){ const s=new Date(d); s.setHours(0,0,0,0); const e=new Date(d); e.setHours(23,59,59,999); return {start:s.toISOString(),end:e.toISOString()}; }
 
+// دالة لعرض الإشعارات المنبثقة
+function showNotification(title, body, type = 'default') {
+  const notification = document.createElement('div');
+  notification.className = `notification-toast ${type}`;
+  notification.innerHTML = `
+    <div class="notification-icon">
+      <i class="fa-solid fa-${type === 'success' ? 'check' : type === 'warning' ? 'exclamation-triangle' : type === 'danger' ? 'exclamation-circle' : 'info'}"></i>
+    </div>
+    <div class="notification-content">
+      <div class="notification-title">${title}</div>
+      <div class="notification-body">${body}</div>
+    </div>
+    <button class="notification-close" onclick="this.parentElement.remove()">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // إزالة الإشعار تلقائياً بعد 10 ثوان
+  setTimeout(() => {
+    if (notification.parentElement) {
+      notification.remove();
+    }
+  }, 10000);
+}
+
 /* ====== تبويبات ====== */
 document.querySelectorAll('.tab').forEach(t=>{
   t.addEventListener('click',()=>{
@@ -257,42 +1164,54 @@ document.querySelectorAll('.tab').forEach(t=>{
   });
 });
 
+// إضافة التبويبات الرئيسية
+document.querySelectorAll('.main-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab).classList.add('active');
+  });
+});
+
 /* ====== إدارة الباصات/الطلاب ====== */
 async function createBus(){
   const bus_no=v('bus_no'), plate=v('plate_no'), cap=num('capacity')||null;
-  if(!bus_no||!plate) return alert('أدخل رقم الباص واللوحة');
+  if(!bus_no||!plate) return showNotification('خطأ', 'أدخل رقم الباص واللوحة', 'danger');
   const { error } = await client.from('buses').insert({ school_bus_no: bus_no, plate_no: plate, capacity: cap });
-  if(error) return alert(error.message);
+  if(error) return showNotification('خطأ', error.message, 'danger');
   ['bus_no','plate_no','capacity'].forEach(id=>document.getElementById(id).value='');
   await Promise.all([loadOptions(), loadBusesList()]);
-  alert('تمت إضافة الباص');
+  showNotification('تمت الإضافة', 'تمت إضافة الباص بنجاح', 'success');
 }
 async function assignBus(){
   const bus_id=+q('#bus_select').value, obs_id=q('#observer_select').value;
-  if(!bus_id||!obs_id) return alert('اختر الباص والملاحظ');
+  if(!bus_id||!obs_id) return showNotification('خطأ', 'اختر الباص والملاحظ', 'danger');
   const { error } = await client.from('buses').update({ observer_id: obs_id }).eq('id', bus_id);
-  if(error) return alert(error.message);
-  await loadBusesList(); alert('تم الربط');
+  if(error) return showNotification('خطأ', error.message, 'danger');
+  await loadBusesList(); 
+  showNotification('تم الربط', 'تم ربط الباص بالملاحظ بنجاح', 'success');
 }
 async function createStudent(){
   const full_name=v('stu_name'), grade=v('stu_grade'), section=v('stu_section');
-  const p=parsePoint(v('home_point')); if(!full_name) return alert('أدخل اسم الطالب');
+  const p=parsePoint(v('home_point')); if(!full_name) return showNotification('خطأ', 'أدخل اسم الطالب', 'danger');
   const { error } = await client.from('students').insert({
     full_name, grade, section,
     home_lat: (typeof p.lat==='number' && !isNaN(p.lat)) ? p.lat : null,
     home_lng: (typeof p.lng==='number' && !isNaN(p.lng)) ? p.lng : null
   });
-  if(error) return alert(error.message);
+  if(error) return showNotification('خطأ', error.message, 'danger');
   ['stu_name','stu_grade','stu_section','home_point'].forEach(id=>document.getElementById(id).value='');
   await Promise.all([loadOptions(), loadStudentsList()]);
-  alert('تمت إضافة الطالب');
+  showNotification('تمت الإضافة', 'تمت إضافة الطالب بنجاح', 'success');
 }
 async function linkStudent(){
   const student_id=+q('#stu_select').value, bus_id=+q('#bus_select2').value;
-  if(!student_id||!bus_id) return alert('اختر الطالب والباص');
+  if(!student_id||!bus_id) return showNotification('خطأ', 'اختر الطالب والباص', 'danger');
   const { error } = await client.from('student_bus').upsert({ student_id, bus_id });
-  if(error) return alert(error.message);
-  await loadStudentsList(); alert('تم تخصيص الطالب للباص');
+  if(error) return showNotification('خطأ', error.message, 'danger');
+  await loadStudentsList(); 
+  showNotification('تم التخصيص', 'تم تخصيص الطالب للباص بنجاح', 'success');
 }
 
 /* ====== تحميل الخيارات والقوائم ====== */
@@ -324,8 +1243,14 @@ async function loadBusesList(){
         <div class="small">${b.capacity?`السعة: ${b.capacity}`:''} ${b.observer_id?` | الملاحظ: ${obsMap.get(b.observer_id)||'-'}`:''}</div>
       </div>
       <div class="item-actions">
-        <button class="warn" style="width:auto" onclick="editBus(${b.id})">تعديل</button>
-        <button class="danger" style="width:auto" onclick="deleteBus(${b.id})">حذف</button>
+        <button class="warn" style="width:auto" onclick="editBus(${b.id})">
+          <i class="fa-solid fa-edit"></i>
+          تعديل
+        </button>
+        <button class="danger" style="width:auto" onclick="deleteBus(${b.id})">
+          <i class="fa-solid fa-trash"></i>
+          حذف
+        </button>
       </div>
     </div>`).join('');
 }
@@ -335,8 +1260,14 @@ async function loadStudentsList(){
     <div class="management-item">
       <div><b>${s.full_name}</b><div class="small">${s.grade||''}${s.section?` - ${s.section}`:''}${s.home_lat?` | موقع منزل`:''}</div></div>
       <div class="item-actions">
-        <button class="warn" style="width:auto" onclick="editStudent(${s.id})">تعديل</button>
-        <button class="danger" style="width:auto" onclick="deleteStudent(${s.id})">حذف</button>
+        <button class="warn" style="width:auto" onclick="editStudent(${s.id})">
+          <i class="fa-solid fa-edit"></i>
+          تعديل
+        </button>
+        <button class="danger" style="width:auto" onclick="deleteStudent(${s.id})">
+          <i class="fa-solid fa-trash"></i>
+          حذف
+        </button>
       </div>
     </div>`).join('');
 }
@@ -344,58 +1275,68 @@ async function loadStudentsList(){
 /* ====== تعديل وحذف باص ====== */
 async function editBus(id){
   const { data: b } = await client.from('buses').select('*').eq('id',id).single();
-  if(!b) return alert('غير موجود');
+  if(!b) return showNotification('خطأ', 'الباص غير موجود', 'danger');
   q('#modalTitle').textContent='تعديل الباص';
   q('#modalBody').innerHTML=`
     <input id="edit_bus_no" value="${b.school_bus_no}"/>
     <input id="edit_plate_no" value="${b.plate_no}"/>
     <input id="edit_capacity" type="number" value="${b.capacity||''}" placeholder="السعة"/>
-    <button class="ghost" onclick="updateBus(${b.id})">حفظ</button>`;
+    <button class="ghost" onclick="updateBus(${b.id})">
+      <i class="fa-solid fa-save"></i>
+      حفظ
+    </button>`;
   q('#editModal').style.display='flex';
 }
 async function updateBus(id){
   const bus_no=q('#edit_bus_no').value.trim(); const plate=q('#edit_plate_no').value.trim();
   const cap=q('#edit_capacity').value?parseInt(q('#edit_capacity').value):null;
-  if(!bus_no||!plate) return alert('أدخل الحقول');
+  if(!bus_no||!plate) return showNotification('خطأ', 'أدخل الحقول المطلوبة', 'danger');
   const { error } = await client.from('buses').update({school_bus_no:bus_no,plate_no:plate,capacity:cap}).eq('id',id);
-  if(error) return alert(error.message);
-  closeModal(); await Promise.all([loadOptions(), loadBusesList()]); alert('تم التحديث');
+  if(error) return showNotification('خطأ', error.message, 'danger');
+  closeModal(); await Promise.all([loadOptions(), loadBusesList()]); 
+  showNotification('تم التحديث', 'تم تحديث بيانات الباص بنجاح', 'success');
 }
 async function deleteBus(id){
   if(!confirm('حذف هذا الباص؟')) return;
   const { error } = await client.from('buses').delete().eq('id',id);
-  if(error) return alert(error.message);
-  await Promise.all([loadOptions(), loadBusesList()]); alert('تم الحذف');
+  if(error) return showNotification('خطأ', error.message, 'danger');
+  await Promise.all([loadOptions(), loadBusesList()]); 
+  showNotification('تم الحذف', 'تم حذف الباص بنجاح', 'success');
 }
 
 /* ====== تعديل/حذف الطلاب ====== */
 async function editStudent(id){
-  const { data:s } = await client.from('students').select('*').eq('id',id).single(); if(!s) return alert('غير موجود');
+  const { data:s } = await client.from('students').select('*').eq('id',id).single(); if(!s) return showNotification('خطأ', 'الطالب غير موجود', 'danger');
   const hp = (s.home_lat&&s.home_lng)?`${s.home_lat},${s.home_lng}`:'';
   q('#modalTitle').textContent='تعديل الطالب';
   q('#modalBody').innerHTML=`
     <input id="edit_stu_name" value="${s.full_name}"/>
     <div class="row"><input id="edit_stu_grade" value="${s.grade||''}" placeholder="الصف"/><input id="edit_stu_section" value="${s.section||''}" placeholder="الشعبة"/></div>
     <input id="edit_home_point" value="${hp}" placeholder="إحداثي المنزل"/>
-    <button class="ghost" onclick="updateStudent(${s.id})">حفظ</button>`;
+    <button class="ghost" onclick="updateStudent(${s.id})">
+      <i class="fa-solid fa-save"></i>
+      حفظ
+    </button>`;
   q('#editModal').style.display='flex';
 }
 async function updateStudent(id){
   const full_name=q('#edit_stu_name').value.trim(); const grade=q('#edit_stu_grade').value.trim(); const section=q('#edit_stu_section').value.trim();
-  const p=parsePoint(q('#edit_home_point').value.trim()); if(!full_name) return alert('أدخل الاسم');
+  const p=parsePoint(q('#edit_home_point').value.trim()); if(!full_name) return showNotification('خطأ', 'أدخل الاسم', 'danger');
   const { error } = await client.from('students').update({
     full_name,grade,section,
     home_lat: (typeof p.lat==='number'&&!isNaN(p.lat))?p.lat:null,
     home_lng: (typeof p.lng==='number'&&!isNaN(p.lng))?p.lng:null
   }).eq('id',id);
-  if(error) return alert(error.message);
-  closeModal(); await loadStudentsList(); alert('تم التحديث');
+  if(error) return showNotification('خطأ', error.message, 'danger');
+  closeModal(); await loadStudentsList(); 
+  showNotification('تم التحديث', 'تم تحديث بيانات الطالب بنجاح', 'success');
 }
 async function deleteStudent(id){
   if(!confirm('حذف هذا الطالب؟')) return;
   const { error } = await client.from('students').delete().eq('id',id);
-  if(error) return alert(error.message);
-  await loadStudentsList(); alert('تم الحذف');
+  if(error) return showNotification('خطأ', error.message, 'danger');
+  await loadStudentsList(); 
+  showNotification('تم الحذف', 'تم حذف الطالب بنجاح', 'success');
 }
 
 /* ====== إشعارات ====== */
@@ -404,17 +1345,35 @@ async function loadNotifications(){
   q('#notif').innerHTML=(data||[]).map(n=>`
     <div class="notif">
       <div><b>${n.title}</b><div class="small">${n.body||''}</div><div class="small">${new Date(n.created_at).toLocaleString()}</div></div>
-      <button class="danger" style="width:auto" onclick="deleteNotification(${n.id})">حذف</button>
+      <button class="danger" style="width:auto" onclick="deleteNotification(${n.id})">
+        <i class="fa-solid fa-trash"></i>
+      </button>
     </div>`).join('');
 }
-async function deleteNotification(id){ await client.from('notifications').delete().eq('id',id); loadNotifications(); }
-async function clearNotificationsDB(){ if(!confirm('حذف كلي؟')) return; await client.from('notifications').delete().neq('id',0); loadNotifications(); }
+async function deleteNotification(id){ 
+  await client.from('notifications').delete().eq('id',id); 
+  loadNotifications(); 
+  showNotification('تم الحذف', 'تم حذف الإشعار', 'success');
+}
+async function clearNotificationsDB(){ 
+  if(!confirm('حذف كلي؟')) return; 
+  await client.from('notifications').delete().neq('id',0); 
+  loadNotifications(); 
+  showNotification('تم الحذف', 'تم حذف جميع الإشعارات', 'success');
+}
 
 /* ====== خريطة حية + تاريخي ====== */
 let map, studentLayer=L.layerGroup(), busMarkers=new Map(), polylines=new Map(), selectedBusId=null, liveChannel=null;
-const busIcon = L.divIcon({html:'<i class="fa-solid fa-bus"></i>',className:'bus-icon',iconSize:[38,38],iconAnchor:[19,19]});
-const studentIcon = L.divIcon({html:'<i class="fa-solid fa-user"></i>',className:'student-icon',iconSize:[30,30],iconAnchor:[15,15]});
-function initMap(){ map=L.map('map').setView([25.285,51.531],11); L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map); studentLayer.addTo(map); }
+const busIcon = L.divIcon({html:'<i class="fa-solid fa-bus"></i>',className:'bus-icon',iconSize:[42,42],iconAnchor:[21,21]});
+const studentIcon = L.divIcon({html:'<i class="fa-solid fa-user"></i>',className:'student-icon',iconSize:[34,34],iconAnchor:[17,17]});
+function initMap(){ 
+  map=L.map('map').setView([25.285,51.531],11); 
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    maxZoom:19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map); 
+  studentLayer.addTo(map); 
+}
 function refreshMap(){ selectedBusId=q('#map_bus').value?Number(q('#map_bus').value):null; drawLive(); subscribeRealtime(); }
 
 async function drawLive(){
@@ -483,49 +1442,85 @@ function drawRunnerAt(ms){
   if(!histPolyline) histPolyline=L.polyline(pts,{weight:5,opacity:.95,color:'#2563eb'}).addTo(histLayer); else histPolyline.setLatLngs(pts);
 }
 async function showCurrentLocation(){
-  const busId=+q('#h_bus').value||null; if(!busId) return alert('اختر الباص');
+  const busId=+q('#h_bus').value||null; if(!busId) return showNotification('خطأ', 'اختر الباص', 'danger');
   ensureHistLayer(); clearHistorical();
   const { data } = await client.from('gps_tracks').select('lat,lng,recorded_at').eq('bus_id',busId).order('recorded_at',{ascending:false}).limit(1);
-  if(!data?.length) return alert('لا توجد بيانات');
+  if(!data?.length) return showNotification('خطأ', 'لا توجد بيانات', 'danger');
   const p=data[0]; L.marker([p.lat,p.lng],{icon:busIcon}).addTo(histLayer).bindTooltip('آخر موقع: '+new Date(p.recorded_at).toLocaleString()).openTooltip(); map.setView([p.lat,p.lng],13);
 }
 async function loadHistorical(){
   const busId=+q('#h_bus').value||null, from=q('#h_from').value, to=q('#h_to').value;
-  if(!busId) return alert('اختر الباص'); if(!from||!to) return alert('حدد المدة');
+  if(!busId) return showNotification('خطأ', 'اختر الباص', 'danger'); if(!from||!to) return showNotification('خطأ', 'حدد المدة', 'danger');
   ensureHistLayer(); clearHistorical();
   const { data, error } = await client.from('gps_tracks')
     .select('lat,lng,recorded_at').eq('bus_id',busId)
     .gte('recorded_at',new Date(from).toISOString())
     .lte('recorded_at',new Date(to).toISOString())
     .order('recorded_at',{ascending:true});
-  if(error) return alert(error.message);
-  if(!data?.length) return alert('لا نقاط ضمن المدة');
+  if(error) return showNotification('خطأ', error.message, 'danger');
+  if(!data?.length) return showNotification('خطأ', 'لا نقاط ضمن المدة', 'danger');
 
   histPoints=data.map(r=>({lat:r.lat,lng:r.lng,ts:new Date(r.recorded_at)}));
   histFrom=histPoints[0].ts.getTime(); histTo=histPoints.at(-1).ts.getTime(); histNow=histFrom;
   histStartMarker=L.marker([histPoints[0].lat,histPoints[0].lng],{icon:busIcon}).addTo(histLayer).bindTooltip('البداية').openTooltip();
   histEndMarker=L.marker([histPoints.at(-1).lat,histPoints.at(-1).lng],{icon:busIcon}).addTo(histLayer).bindTooltip('النهاية');
   map.fitBounds(L.latLngBounds(histPoints.map(p=>[p.lat,p.lng])),{padding:[30,30]});
-  q('#playBtn').disabled=false; q('#gpxBtn').disabled=false; q('#csvBtn').disabled=false; q('#playBtn').textContent='▶ تشغيل';
+  q('#playBtn').disabled=false; q('#gpxBtn').disabled=false; q('#csvBtn').disabled=false; q('#playBtn').innerHTML='<i class="fa-solid fa-play"></i> تشغيل';
   setTimelineBounds(); drawRunnerAt(histNow);
+  showNotification('تم التحميل', 'تم تحميل المسار التاريخي بنجاح', 'success');
 }
-function clearHistorical(){ if(histTimer){clearInterval(histTimer);histTimer=null} if(histPolyline){histLayer.removeLayer(histPolyline);histPolyline=null}
-  if(histStartMarker){histLayer.removeLayer(histStartMarker);histStartMarker=null} if(histEndMarker){histLayer.removeLayer(histEndMarker);histEndMarker=null}
-  if(runnerMarker){histLayer.removeLayer(runnerMarker);runnerMarker=null} histPoints=[];histFrom=0;histTo=0;histNow=0; ['playBtn','gpxBtn','csvBtn'].forEach(id=>q('#'+id).disabled=true);
-  q('#tl_from').textContent='—'; q('#tl_to').textContent='—'; q('#tl_now').textContent='—'; const tl=q('#timeline'); tl.value='0'; tl.min='0'; tl.max='100'; }
+function clearHistorical(){ 
+  if(histTimer){clearInterval(histTimer);histTimer=null} 
+  if(histPolyline){histLayer.removeLayer(histPolyline);histPolyline=null}
+  if(histStartMarker){histLayer.removeLayer(histStartMarker);histStartMarker=null} 
+  if(histEndMarker){histLayer.removeLayer(histEndMarker);histEndMarker=null}
+  if(runnerMarker){histLayer.removeLayer(runnerMarker);runnerMarker=null} 
+  histPoints=[];histFrom=0;histTo=0;histNow=0; 
+  ['playBtn','gpxBtn','csvBtn'].forEach(id=>q('#'+id).disabled=true);
+  q('#tl_from').textContent='—'; q('#tl_to').textContent='—'; q('#tl_now').textContent='—'; 
+  const tl=q('#timeline'); tl.value='0'; tl.min='0'; tl.max='100'; 
+}
 function togglePlayback(){
   if(histPoints.length===0) return;
-  if(histTimer){ clearInterval(histTimer); histTimer=null; q('#playBtn').textContent='▶ تشغيل'; return; }
-  q('#playBtn').textContent='⏸ إيقاف مؤقت';
-  histTimer=setInterval(()=>{ histNow=Math.min(histNow+Math.max(1,Number(q('#speedSel').value||'60'))*1000,histTo);
-    q('#timeline').value=String(histNow); drawRunnerAt(histNow); updateTimelineLabels();
-    if(histNow>=histTo){ clearInterval(histTimer); histTimer=null; q('#playBtn').textContent='▶ تشغيل'; } }, 200);
+  if(histTimer){ 
+    clearInterval(histTimer); 
+    histTimer=null; 
+    q('#playBtn').innerHTML='<i class="fa-solid fa-play"></i> تشغيل'; 
+    return; 
+  }
+  q('#playBtn').innerHTML='<i class="fa-solid fa-pause"></i> إيقاف مؤقت';
+  histTimer=setInterval(()=>{ 
+    histNow=Math.min(histNow+Math.max(1,Number(q('#speedSel').value||'60'))*1000,histTo);
+    q('#timeline').value=String(histNow); 
+    drawRunnerAt(histNow); 
+    updateTimelineLabels();
+    if(histNow>=histTo){ 
+      clearInterval(histTimer); 
+      histTimer=null; 
+      q('#playBtn').innerHTML='<i class="fa-solid fa-play"></i> تشغيل'; 
+    } 
+  }, 200);
 }
-function exportGPX(){ if(!histPoints.length) return; const header=`<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="FMS" xmlns="http://www.topografix.com/GPX/1/1">\n<trk><name>Bus Track</name><trkseg>`;
-  const body=histPoints.map(p=>`<trkpt lat="${p.lat}" lon="${p.lng}"><time>${p.ts.toISOString()}</time></trkpt>`).join('\n'); const footer=`</trkseg></trk></gpx>`;
-  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([header+'\n'+body+'\n'+footer],{type:'application/gpx+xml'})); a.download='bus_track.gpx'; a.click(); }
-function exportCSV(){ if(!histPoints.length) return; const rows=['lat,lng,recorded_at'].concat(histPoints.map(p=>`${p.lat},${p.lng},${p.ts.toISOString()}`));
-  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv;charset=utf-8'})); a.download='bus_track.csv'; a.click(); }
+function exportGPX(){ 
+  if(!histPoints.length) return; 
+  const header=`<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="FMS" xmlns="http://www.topografix.com/GPX/1/1">\n<trk><name>Bus Track</name><trkseg>`;
+  const body=histPoints.map(p=>`<trkpt lat="${p.lat}" lon="${p.lng}"><time>${p.ts.toISOString()}</time></trkpt>`).join('\n'); 
+  const footer=`</trkseg></trk></gpx>`;
+  const a=document.createElement('a'); 
+  a.href=URL.createObjectURL(new Blob([header+'\n'+body+'\n'+footer],{type:'application/gpx+xml'})); 
+  a.download='bus_track.gpx'; 
+  a.click(); 
+  showNotification('تم التصدير', 'تم تصدير ملف GPX بنجاح', 'success');
+}
+function exportCSV(){ 
+  if(!histPoints.length) return; 
+  const rows=['lat,lng,recorded_at'].concat(histPoints.map(p=>`${p.lat},${p.lng},${p.ts.toISOString()}`));
+  const a=document.createElement('a'); 
+  a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv;charset=utf-8'})); 
+  a.download='bus_track.csv'; 
+  a.click(); 
+  showNotification('تم التصدير', 'تم تصدير ملف CSV بنجاح', 'success');
+}
 
 /* ====== تقرير الحضور ====== */
 const infoBusNo=q('#info_bus_no'), infoPlate=q('#info_plate'), infoObserver=q('#info_observer'), infoDate=q('#info_date'), infoPeriod=q('#info_period'),
@@ -537,37 +1532,70 @@ async function getBusInfo(busId){
 }
 async function buildReport(){
   const busId=+q('#r_bus').value||null, period=q('#r_period').value, dateStr=q('#r_date').value;
-  if(!busId||!dateStr) return alert('اختر الباص والتاريخ');
+  if(!busId||!dateStr) return showNotification('خطأ', 'اختر الباص والتاريخ', 'danger');
   const bi=await getBusInfo(busId); infoBusNo.textContent=bi.bus_no; infoPlate.textContent=bi.plate; infoObserver.textContent=bi.observer;
   infoDate.textContent=new Date(dateStr+'T00:00:00').toLocaleDateString('ar-QA',{dateStyle:'full'}); infoPeriod.textContent=toArabicPeriod(period);
   const {start,end}=dayRangeISO(dateStr);
   const { data: rows } = await client.from('attendance_events')
     .select('student_id,period,action,event_time,students(full_name)').eq('bus_id',busId).eq('period',period).gte('event_time',start).lte('event_time',end)
     .order('event_time',{ascending:true});
-  if(!rows?.length){ reportBody.innerHTML='<tr><td colspan="5" class="small" style="text-align:center">لا توجد سجلات</td></tr>'; countBoard.textContent=0;countAlight.textContent=0;countAbsent.textContent=0;countTotal.textContent=0; return; }
+  if(!rows?.length){ 
+    reportBody.innerHTML='<tr><td colspan="5" class="small" style="text-align:center">لا توجد سجلات</td></tr>'; 
+    countBoard.textContent=0;countAlight.textContent=0;countAbsent.textContent=0;countTotal.textContent=0; 
+    showNotification('لا توجد بيانات', 'لا توجد سجلات للحضور في الفترة المحددة', 'warning');
+    return; 
+  }
   reportBody.innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.students?.full_name||'—'}</td><td>${fmt.format(new Date(r.event_time))}</td><td>${toArabicAction(r.action)}</td><td>${toArabicPeriod(r.period)}</td></tr>`).join('');
-  countBoard.textContent=rows.filter(r=>r.action==='board').length; countAlight.textContent=rows.filter(r=>r.action==='alight').length; countAbsent.textContent=rows.filter(r=>r.action==='absent').length; countTotal.textContent=rows.length;
+  countBoard.textContent=rows.filter(r=>r.action==='board').length; 
+  countAlight.textContent=rows.filter(r=>r.action==='alight').length; 
+  countAbsent.textContent=rows.filter(r=>r.action==='absent').length; 
+  countTotal.textContent=rows.length;
+  showNotification('تم التحديث', 'تم تحديث التقرير بنجاح', 'success');
 }
 function printReport(){ window.print(); }
-function downloadCSV(){ const tbl=document.getElementById('report_table'); if(!tbl) return; let csv=[]; const headers=Array.from(tbl.querySelectorAll('thead th')).map(th=>th.textContent.trim()); csv.push(headers.join(','));
-  Array.from(tbl.querySelectorAll('tbody tr')).forEach(tr=>{ const cells=Array.from(tr.querySelectorAll('td')).map(td=>`"${td.textContent.replace(/"/g,'""')}"`); if(cells.length===headers.length) csv.push(cells.join(','));});
-  const a=document.createElement('a'); const d=(q('#r_date').value||new Date().toISOString().slice(0,10)); const p=q('#r_period').value==='morning'?'صباحي':'مسائي';
-  a.href=URL.createObjectURL(new Blob([`\uFEFF${csv.join('\n')}`],{type:'text/csv;charset=utf-8'})); a.download=`تقرير_${infoBusNo.textContent||'باص'}_${p}_${d}.csv`; a.click(); }
+function downloadCSV(){ 
+  const tbl=document.getElementById('report_table'); 
+  if(!tbl) return; 
+  let csv=[]; 
+  const headers=Array.from(tbl.querySelectorAll('thead th')).map(th=>th.textContent.trim()); 
+  csv.push(headers.join(','));
+  Array.from(tbl.querySelectorAll('tbody tr')).forEach(tr=>{ 
+    const cells=Array.from(tr.querySelectorAll('td')).map(td=>`"${td.textContent.replace(/"/g,'""')}"`); 
+    if(cells.length===headers.length) csv.push(cells.join(',')); 
+  });
+  const a=document.createElement('a'); 
+  const d=(q('#r_date').value||new Date().toISOString().slice(0,10)); 
+  const p=q('#r_period').value==='morning'?'صباحي':'مسائي';
+  a.href=URL.createObjectURL(new Blob([`\uFEFF${csv.join('\n')}`],{type:'text/csv;charset=utf-8'})); 
+  a.download=`تقرير_${infoBusNo.textContent||'باص'}_${p}_${d}.csv`; 
+  a.click(); 
+  showNotification('تم التحميل', 'تم تحميل ملف CSV بنجاح', 'success');
+}
 
-/* ====== إدارة حسابات الملاحظين (الإصدار المصلح) ====== */
+/* ====== إدارة حسابات الملاحظين ====== */
 async function loadBusesForObserver() {
   const { data: buses } = await client.from('buses').select('id, school_bus_no, plate_no, observer_id').order('school_bus_no');
   const sel=document.getElementById('obs_bus'); if(!sel) return; sel.innerHTML='<option value="">اختر الباص المخصص</option>';
-  (buses||[]).forEach(b=>{ const opt=document.createElement('option'); opt.value=b.id; opt.textContent=`${b.school_bus_no} - ${b.plate_no}`; if(b.observer_id){ opt.disabled=true; opt.textContent+=' (مخصص)'; } sel.appendChild(opt); });
+  (buses||[]).forEach(b=>{ 
+    const opt=document.createElement('option'); 
+    opt.value=b.id; 
+    opt.textContent=`${b.school_bus_no} - ${b.plate_no}`; 
+    if(b.observer_id){ 
+      opt.disabled=true; 
+      opt.textContent+=' (مخصص)'; 
+    } 
+    sel.appendChild(opt); 
+  });
 }
 async function createObserverAccount(){
   const name=v('obs_name'), phone=v('obs_phone'), pass=v('obs_password'), busId=Number(document.getElementById('obs_bus').value)||null;
-  if(!name||!phone||!pass) return alert('أدخل الاسم/الهاتف/المرور');
+  if(!name||!phone||!pass) return showNotification('خطأ', 'أدخل الاسم/الهاتف/المرور', 'danger');
   const { data: obsRow, error:e1 } = await client.from('profiles').insert({ full_name:name, phone, password:pass, role:'observer', assigned_bus_id: busId }).select().single();
-  if(e1) return alert(e1.message);
-  if(busId){ const { error:e2 } = await client.from('buses').update({ observer_id: obsRow.id }).eq('id', busId); if(e2) return alert(e2.message); }
+  if(e1) return showNotification('خطأ', e1.message, 'danger');
+  if(busId){ const { error:e2 } = await client.from('buses').update({ observer_id: obsRow.id }).eq('id', busId); if(e2) return showNotification('خطأ', e2.message, 'danger'); }
   ['obs_name','obs_phone','obs_password'].forEach(id=>document.getElementById(id).value=''); document.getElementById('obs_bus').value='';
-  await Promise.all([loadOptions(), loadObserversAccountsList(), loadBusesForObserver()]); alert('تم إنشاء الحساب');
+  await Promise.all([loadOptions(), loadObserversAccountsList(), loadBusesForObserver()]); 
+  showNotification('تم الإنشاء', 'تم إنشاء حساب الملاحظ بنجاح', 'success');
 }
 async function loadObserversAccountsList(){
   const wrap=document.getElementById('observers_accounts_list'); if(!wrap) return;
@@ -580,19 +1608,26 @@ async function loadObserversAccountsList(){
         <div class="small">${o.phone||''} ${o.buses?`| الباص: ${o.buses.school_bus_no} - ${o.buses.plate_no}`:'| لا يوجد باص مخصص'}</div>
       </div>
       <div class="item-actions">
-        <button class="warn btn-edit-obs" style="width:auto">تعديل</button>
-        <button class="danger btn-del-obs" style="width:auto">حذف</button>
+        <button class="warn btn-edit-obs" style="width:auto">
+          <i class="fa-solid fa-edit"></i>
+          تعديل
+        </button>
+        <button class="danger btn-del-obs" style="width:auto">
+          <i class="fa-solid fa-trash"></i>
+          حذف
+        </button>
       </div>
     </div>`).join('');
 }
-/* تفويض أحداث أزرار تعديل/حذف */
+/* تفويض أحداث أزرار تعديل/حذف — إصلاح UUID */
 document.addEventListener('click', (ev)=>{
   const el = ev.target.closest('.btn-edit-obs, .btn-del-obs'); if(!el) return;
-  const holder=el.closest('[data-oid]'); const oid=holder?Number(holder.getAttribute('data-oid')):null; if(!oid) return;
+  const holder=el.closest('[data-oid]'); const oid=holder ? holder.getAttribute('data-oid') : null; // <— لا تحويل إلى Number
+  if(!oid) return;
   if(el.classList.contains('btn-edit-obs')) editObserverAccount(oid); else deleteObserverAccount(oid);
 });
 async function editObserverAccount(id){
-  const { data:o, error } = await client.from('profiles').select('*').eq('id',id).single(); if(error||!o) return alert('غير موجود');
+  const { data:o, error } = await client.from('profiles').select('*').eq('id',id).single(); if(error||!o) return showNotification('خطأ', 'الملاحظ غير موجود', 'danger');
   q('#modalTitle').textContent='تعديل حساب الملاحظ';
   q('#modalBody').innerHTML=`
     <input id="edit_obs_name" value="${o.full_name||''}" placeholder="اسم الملاحظ"/>
@@ -601,33 +1636,47 @@ async function editObserverAccount(id){
     <label>الباص المخصص:
       <select id="edit_obs_bus"><option value="">بدون</option></select>
     </label>
-    <button class="ghost" onclick="updateObserverAccount(${o.id})">حفظ</button>`;
+    <button class="ghost" onclick="updateObserverAccount('${o.id}')">
+      <i class="fa-solid fa-save"></i>
+      حفظ
+    </button>`; // <— تمرير كسلسلة مقتبسة
   const { data: buses } = await client.from('buses').select('id,school_bus_no,plate_no,observer_id').order('school_bus_no');
   const sel=document.getElementById('edit_obs_bus');
-  (buses||[]).forEach(b=>{ const opt=document.createElement('option'); opt.value=b.id; opt.textContent=`${b.school_bus_no} - ${b.plate_no}`; if(b.observer_id&&b.observer_id!==o.id){opt.disabled=true; opt.textContent+=' (مخصص)';} sel.appendChild(opt);});
+  (buses||[]).forEach(b=>{ 
+    const opt=document.createElement('option'); 
+    opt.value=b.id; 
+    opt.textContent=`${b.school_bus_no} - ${b.plate_no}`; 
+    if(b.observer_id&&b.observer_id!==o.id){
+      opt.disabled=true; 
+      opt.textContent+=' (مخصص)';
+    } 
+    sel.appendChild(opt);
+  });
   sel.value=o.assigned_bus_id||'';
   q('#editModal').style.display='flex';
 }
 async function updateObserverAccount(id){
   const name=q('#edit_obs_name').value.trim(), phone=q('#edit_obs_phone').value.trim(), pass=q('#edit_obs_password').value.trim(), busId=Number(q('#edit_obs_bus').value)||null;
-  if(!name||!phone) return alert('أدخل الاسم والهاتف');
+  if(!name||!phone) return showNotification('خطأ', 'أدخل الاسم والهاتف', 'danger');
   const { data: prev } = await client.from('profiles').select('assigned_bus_id').eq('id',id).single();
   const prevBus=prev?.assigned_bus_id||null;
 
   const upd={full_name:name, phone, assigned_bus_id:busId}; if(pass) upd.password=pass;
-  const { error:e1 } = await client.from('profiles').update(upd).eq('id',id); if(e1) return alert(e1.message);
+  const { error:e1 } = await client.from('profiles').update(upd).eq('id',id); if(e1) return showNotification('خطأ', e1.message, 'danger');
 
   if(prevBus && prevBus!==busId) await client.from('buses').update({ observer_id:null }).eq('id', prevBus);
   if(busId) await client.from('buses').update({ observer_id:id }).eq('id', busId);
 
-  closeModal(); await Promise.all([loadOptions(), loadObserversAccountsList(), loadBusesForObserver()]); alert('تم الحفظ');
+  closeModal(); await Promise.all([loadOptions(), loadObserversAccountsList(), loadBusesForObserver()]); 
+  showNotification('تم التحديث', 'تم تحديث بيانات الملاحظ بنجاح', 'success');
 }
 async function deleteObserverAccount(id){
   if(!confirm('حذف هذا الملاحظ؟ سيتم تحرير الباص المرتبط به.')) return;
   await client.from('buses').update({ observer_id:null }).eq('observer_id', id);
   const { error } = await client.from('profiles').delete().eq('id', id);
-  if(error) return alert(error.message);
-  await Promise.all([loadOptions(), loadObserversAccountsList(), loadBusesForObserver()]); alert('تم الحذف');
+  if(error) return showNotification('خطأ', error.message, 'danger');
+  await Promise.all([loadOptions(), loadObserversAccountsList(), loadBusesForObserver()]); 
+  showNotification('تم الحذف', 'تم حذف حساب الملاحظ بنجاح', 'success');
 }
 
 /* ====== نافذة ====== */
@@ -641,6 +1690,11 @@ function closeModal(){ q('#editModal').style.display='none'; }
   q('#h_from').value=toLocal(twoHrsAgo); q('#h_to').value=toLocal(now);
   q('#speedSel').addEventListener('change', setStepFromSelect); q('#timeline').addEventListener('input', onScrub);
   loadBusesList(); loadObserversAccountsList(); loadStudentsList();
+  
+  // عرض رسالة ترحيبية
+  setTimeout(() => {
+    showNotification('مرحباً بك', 'تم تحميل لوحة المشرف بنجاح', 'success');
+  }, 1000);
 })();
 </script>
 </body>
