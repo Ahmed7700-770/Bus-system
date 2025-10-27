@@ -13,7 +13,8 @@
 
 <style>
 :root{--bg:#f8fafc;--card:#fff;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--pri:#10b981;--sec:#0ea5e9;--danger:#ef4444}
-*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#f0f4f8,#e2e8f0);color:var(--ink);font-family:"Tajawal",system-ui}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(135deg,#f0f4f8,#e2e8f0);color:var(--ink);font-family:"Tajawal",system-ui}
 header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.7);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:14px}
 .container{padding:12px;max-width:760px;margin:0 auto}
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
@@ -32,16 +33,27 @@ select,input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid va
 .item{display:grid;grid-template-columns:1fr 120px 110px;gap:8px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:12px;background:#f9fbff}
 @media(max-width:520px){.item{grid-template-columns:1fr 1fr 1fr}}
 #omap{height:300px;border-radius:14px;border:1px solid var(--line)}
-.divIcon{display:flex;align-items:center;justify-content:center;background:#10b981;color:#fff;border-radius:50%;width:32px;height:32px;border:3px solid #fff}
-..obIcon{background:#0ea5e9; width:40px; height:40px; border:3px solid #fff;border-radius:50%;box-shadow:0 6px 14px rgba(14,165,233,.35);
+
+/* قاعدة عامة لأيقونات الخريطة */
+.divIcon{
+  display:flex;align-items:center;justify-content:center;
+  background:#10b981;color:#fff;border-radius:50%;
+  width:32px;height:32px;border:3px solid #fff;
 }
 
+/* إصلاح الاسم: كانت ..obIcon → صارت .obIcon */
+.obIcon{
+  background: linear-gradient(135deg,#38bdf8,#0ea5e9);
+  width:42px;height:42px;border:3px solid #fff;border-radius:50%;
+  box-shadow:0 8px 18px rgba(14,165,233,.28);
+  display:flex;align-items:center;justify-content:center;
+}
+.obIcon i{ font-size:18px; filter:drop-shadow(0 2px 2px rgba(0,0,0,.15)); }
 
 /* أيقونة الطالب – أنيقة ودائرية */
 .stuIcon{
   background: linear-gradient(135deg,#22c55e,#16a34a)!important;
-  width: 34px!important;
-  height: 34px!important;
+  width: 34px!important; height: 34px!important;
   border: 3px solid #fff!important;
   box-shadow: 0 6px 14px rgba(34,197,94,.35);
 }
@@ -199,7 +211,12 @@ async function login(){
   const phone = document.getElementById('login_phone').value.trim();
   const password = document.getElementById('login_password').value.trim();
   if(!phone||!password){ alert('أدخل الهاتف وكلمة المرور'); return; }
-  const { data, error } = await sb.from('profiles').select('*').eq('phone',phone).eq('password',password).eq('role','observer').single();
+  const { data, error } = await sb.from('profiles')
+    .select('*')
+    .eq('phone',phone)
+    .eq('password',password)
+    .eq('role','observer')
+    .single();
   if(error||!data){ alert('بيانات غير صحيحة'); return; }
   await verifyAndLoadObserver(data);
 }
@@ -225,15 +242,22 @@ async function loadAssignedBus(){
     currentBusId = currentObserver.assigned_bus_id;
   }else{
     // fallback: buses.observer_id
-    const { data: bus } = await sb.from('buses').select('id,school_bus_no,plate_no').eq('observer_id', observerId).single();
+    const { data: bus } = await sb.from('buses')
+      .select('id,school_bus_no,plate_no')
+      .eq('observer_id', observerId)
+      .single();
     currentBusId = bus?.id || null;
   }
 
   // عبّي القائمة (باص واحد فقط ومغلق)
   if(currentBusId){
-    const { data: bus } = await sb.from('buses').select('id,school_bus_no,plate_no').eq('id', currentBusId).single();
+    const { data: bus } = await sb.from('buses')
+      .select('id,school_bus_no,plate_no')
+      .eq('id', currentBusId)
+      .single();
     if(bus){
-      document.getElementById('bus_select').innerHTML = `<option value="${bus.id}" selected>${bus.school_bus_no} - ${bus.plate_no}</option>`;
+      document.getElementById('bus_select').innerHTML =
+        `<option value="${bus.id}" selected>${bus.school_bus_no} - ${bus.plate_no}</option>`;
       document.getElementById('bus_select').disabled = true;
       document.getElementById('user_bus').textContent = `الباص: ${bus.school_bus_no}`;
     }
@@ -283,11 +307,21 @@ function setPeriod(p){
 
 /* ===== Map ===== */
 let omap, stuLayer=L.layerGroup(), myMarker=null;
+
 const observerIcon = L.divIcon({
   html: '<i class="fas fa-school"></i>',
-  className: 'divIcon obIcon'
+  className: 'divIcon obIcon',
+  iconSize: [42,42],
+  iconAnchor: [21,21]
 });
-const observerIcon = L.divIcon({html:'<i class="fas fa-user-tie"></i>', className:'divIcon obIcon'});
+
+const studentIcon = L.divIcon({
+  html:'<i class="fas fa-user-graduate"></i>',
+  className:'divIcon stuIcon',
+  iconSize:[34,34],
+  iconAnchor:[17,17]
+});
+
 function initOMap(){
   omap = L.map('omap').setView([25.285,51.531], 12);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(omap);
@@ -351,7 +385,7 @@ function renderLists(students){
   });
   sum(dBM, students.length, 'sum_board_m');
 
-  /* صباحي – النزول (زر نزول واضح باللون الأزرق) */
+  /* صباحي – النزول */
   const listAM=q('#list_alight_m'); listAM.innerHTML=''; let dAM=0;
   students.forEach(stu=>{
     const boarded=S.board[stu.id]==='board'; const al=S.alight[`${stu.id}_morning`]==='alight'; if(al) dAM++;
@@ -366,7 +400,7 @@ function renderLists(students){
   });
   sum(dAM, students.length, 'sum_alight_m');
 
-  /* مسائي – الصعود من المدرسة (صعود/لم يصعد) */
+  /* مسائي – الصعود */
   const listBE=q('#list_board_e'); listBE.innerHTML=''; let dBE=0;
   students.forEach(stu=>{
     const st=S.board[`${stu.id}_evening`]; if(st) dBE++;
@@ -379,7 +413,7 @@ function renderLists(students){
   });
   sum(dBE, students.length, 'sum_board_e');
 
-  /* مسائي – النزول (زر نزول واضح باللون الأزرق) */
+  /* مسائي – النزول */
   const listAE=q('#list_alight_e'); listAE.innerHTML=''; let dAE=0;
   students.forEach(stu=>{
     const boardedE=S.board[`${stu.id}_evening`]==='board'; const alE=S.alight[`${stu.id}_evening`]==='alight'; if(alE) dAE++;
@@ -472,20 +506,25 @@ function toggleTracking(on){
     if(watchId){ setTrackingUI(true); return; }
     watchId = navigator.geolocation.watchPosition(async pos=>{
       const now=Date.now(); const lat=pos.coords.latitude, lng=pos.coords.longitude;
-      if(!myMarker){ myMarker=L.marker([lat,lng],{icon:observerIcon}).addTo(omap).bindTooltip('موقعي').openTooltip(); }
-      else myMarker.setLatLng([lat,lng]);
+      if(!myMarker){
+        myMarker=L.marker([lat,lng],{icon:observerIcon}).addTo(omap).bindTooltip('موقعي').openTooltip();
+      }else{
+        myMarker.setLatLng([lat,lng]);
+      }
       if(now-lastSent>=9000){ lastSent=now; await sendPoint(lat,lng); }
     }, err=>alert('تعذر تحديد الموقع: '+err.message), {enableHighAccuracy:true, maximumAge:5000, timeout:15000});
     setTrackingUI(true);
-  }else{ stopTracking(); }
+  }else{
+    stopTracking();
+  }
 }
-function stopTracking(){ if(watchId){ navigator.geolocation.clearWatch(watchId); watchId=null; } setTrackingUI(false); }
+function stopTracking(){
+  if(watchId){ navigator.geolocation.clearWatch(watchId); watchId=null; }
+  setTrackingUI(false);
+}
 
 /* ===== Boot ===== */
 (async function boot(){ await checkExistingSession(); })();
 </script>
 </body>
 </html>
-
-
-
