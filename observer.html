@@ -69,34 +69,11 @@ select,input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid va
 /* زر النزول (واضح ومختلف عن الصعود/لم يصعد) */
 .btn-alight{background:linear-gradient(135deg,#0ea5e9,#6366f1)!important;color:#fff!important;border:none!important;font-size:16px;box-shadow:0 6px 18px rgba(14,165,233,.25)}
 .btn-alight i{font-size:14px}
-
-/* ========== SPlASH (الشعار الأصفر) ========== */
-#splash{
-  position:fixed; inset:0; background:#facc15;  /* أصفر قريب من الوزارة */
-  display:flex; align-items:center; justify-content:center;
-  z-index:9999; transition:opacity .4s ease;
-}
-#splash .wrap{ text-align:center; }
-#splash img{ width:160px; height:auto; display:block; margin:0 auto 14px; }
-#splash .brand{ color:#111827; font-weight:800; letter-spacing:.5px; }
-.hide{ opacity:0; pointer-events:none; }
-/* ============================================ */
 </style>
 </head>
 <body>
-
-<!-- ========== SPlASH ========== -->
-<!-- ضع الشعار في assets/logo-mohe.png (شفاف) -->
-<div id="splash" aria-hidden="true">
-  <div class="wrap">
-    <img src="./assets/logo-mohe.png" alt="وزارة التربية والتعليم">
-    <div class="brand">وزارة التربية والتعليم</div>
-  </div>
-</div>
-<!-- ============================ -->
-
 <!-- شاشة الدخول -->
-<div id="login_screen" style="display:none">
+<div id="login_screen">
   <div class="container">
     <div class="card">
       <h3 style="text-align:center"><i class="fas fa-bus"></i> تسجيل الدخول</h3>
@@ -217,13 +194,6 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 /* ===== (إصلاح بسيط) أداة تحديد العناصر ===== */
 const q = (sel)=>document.querySelector(sel);
 
-/* ===== SPlASH Helpers ===== */
-function showSplash(ms=3000){
-  const el = document.getElementById('splash');
-  el.classList.remove('hide');
-  return new Promise(res=>setTimeout(()=>{ el.classList.add('hide'); res(); }, ms));
-}
-
 /* ===== State ===== */
 let currentPeriod = localStorage.getItem('period') || 'morning';
 let observerId = null, currentObserver=null, currentBusId=null;
@@ -235,12 +205,7 @@ function scoped(){ const k=keyScope(); state[k]=state[k]||{board:{},alight:{}}; 
 /* ===== Auth ===== */
 async function checkExistingSession(){
   const saved = localStorage.getItem('currentObserver');
-  if(saved){ await verifyAndLoadObserver(JSON.parse(saved), {skipSplash:false}); }
-  else{
-    // بعد أول فتح: أظهر الشعار ثم شاشة الدخول
-    await showSplash(3000);
-    document.getElementById('login_screen').style.display='block';
-  }
+  if(saved){ await verifyAndLoadObserver(JSON.parse(saved)); }
 }
 async function login(){
   const phone = document.getElementById('login_phone').value.trim();
@@ -253,14 +218,11 @@ async function login(){
     .eq('role','observer')
     .single();
   if(error||!data){ alert('بيانات غير صحيحة'); return; }
-  await verifyAndLoadObserver(data, {showSplashAfterLogin:true});
+  await verifyAndLoadObserver(data);
 }
-
-async function verifyAndLoadObserver(o, opts={}){
+async function verifyAndLoadObserver(o){
   currentObserver=o; observerId=o.id;
   localStorage.setItem('currentObserver', JSON.stringify(o));
-  // عند تسجيل الدخول: أظهر الشعار 3 ثوانٍ قبل الدخول للواجهة
-  if(opts.showSplashAfterLogin){ await showSplash(3000); }
   await loadAssignedBus();
   showMain(); // UI
   subscribeAssignment(); // Realtime
@@ -562,10 +524,7 @@ function stopTracking(){
 }
 
 /* ===== Boot ===== */
-(async function boot(){
-  // أول فتح: شعار 3 ثوانٍ ثم نظهر شاشة الدخول (إذا لا توجد جلسة محفوظة)
-  await checkExistingSession();
-})();
+(async function boot(){ await checkExistingSession(); })();
 </script>
 </body>
 </html>
